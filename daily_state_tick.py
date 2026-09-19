@@ -2294,3 +2294,21 @@ class DailyStateTickMixin:
                 }
         if memory_companion_proactive_payload:
             await self._memory_companion_record_proactive_message(**memory_companion_proactive_payload)
+
+    async def _run_hdsi_life_tick_sidecar(self) -> None:
+        """Advance the opt-in HDSI life sidecar without disturbing the main tick.
+
+        HDSI life progression is independent from proactive message generation:
+        it only advances actor records already created by an HDSI route and
+        never schedules a send or changes the legacy user/proactive decisions.
+        Kept in one place so every tick path shares the same fail-open policy.
+        """
+        try:
+            from .hdsi_experiment import run_hdsi_life_tick
+
+            await run_hdsi_life_tick(self)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            logger.debug("HDSI life tick skipped: %s", _single_line(exc, 160))
+

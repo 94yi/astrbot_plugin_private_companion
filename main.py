@@ -1747,6 +1747,21 @@ def _strip_chain_plain_thinking(owner: Any, chain: list[Any]) -> None:
             comp.text = cleaned if idx == 0 else ""
         except Exception:
             pass
+async def _mark_hdsi_inbound(plugin: Any, event: Any) -> None:
+    """Record an inbound HDSI route for both private and group entry points.
+
+    The two message handlers need identical bookkeeping, so keep it in one
+    place and fail open: a broken HDSI sidecar must never block the normal
+    companion reply path.
+    """
+    mark_hdsi_route(plugin, event)
+    try:
+        await record_hdsi_inbound_event(plugin, event)
+    except Exception:
+        return
+
+
+
 
 
 class PrivateCompanionPlugin(
@@ -21086,11 +21101,7 @@ class PrivateCompanionPlugin(
     @_multi_persona_event_context
     @event_data_save_boundary(flush=True)
     async def on_private_message(self, event: AstrMessageEvent, *args, **kwargs):
-        mark_hdsi_route(self, event)
-        try:
-            await record_hdsi_inbound_event(self, event)
-        except Exception:
-            pass
+        await _mark_hdsi_inbound(self, event)
         if await self._handle_private_message_preflight(event):
             return
         return await handle_private_message(self, event, *args, **kwargs)
@@ -21514,11 +21525,7 @@ class PrivateCompanionPlugin(
     @_multi_persona_event_context
     @event_data_save_boundary(flush=True)
     async def on_group_message(self, event: AstrMessageEvent, *args, **kwargs):
-        mark_hdsi_route(self, event)
-        try:
-            await record_hdsi_inbound_event(self, event)
-        except Exception:
-            pass
+        await _mark_hdsi_inbound(self, event)
         return await handle_group_message(self, event, *args, **kwargs)
 
     def _format_timestamp_elapsed(self, timestamp: Any) -> str:

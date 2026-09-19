@@ -18855,17 +18855,8 @@ class DailyStateMixin(DailyStateTickMixin):
                     self._save_proactive_tick_state(
                         {"users", "proactive_candidate_pool", "proactive_runtime"}
                     )
-                # HDSI life progression is independent from proactive message
-                # generation and remains available when the daily send budget
-                # is explicitly zero.
-                try:
-                    from .hdsi_experiment import run_hdsi_life_tick
-
-                    await run_hdsi_life_tick(self)
-                except asyncio.CancelledError:
-                    raise
-                except Exception as exc:
-                    logger.debug("HDSI life tick skipped: %s", _single_line(exc, 160))
+                # HDSI life progression runs as an opt-in sidecar
+                await self._run_hdsi_life_tick_sidecar()
                 return
             if isinstance(runtime, dict):
                 runtime["generation_disabled"] = False
@@ -18885,17 +18876,8 @@ class DailyStateMixin(DailyStateTickMixin):
             await self._tick_user(user_id, user)
 
         await self._run_proactive_maintenance_tasks()
-        # HDSI life progression is an opt-in sidecar. It only advances actor
-        # records already created by an HDSI route and never schedules a send
-        # or changes the legacy user/proactive decisions.
-        try:
-            from .hdsi_experiment import run_hdsi_life_tick
-
-            await run_hdsi_life_tick(self)
-        except asyncio.CancelledError:
-            raise
-        except Exception as exc:
-            logger.debug("HDSI life tick skipped: %s", _single_line(exc, 160))
+        # HDSI life progression is an opt-in sidecar.
+        await self._run_hdsi_life_tick_sidecar()
         async with self._data_lock:
             runtime = self.data.setdefault("proactive_runtime", {})
             if isinstance(runtime, dict):
