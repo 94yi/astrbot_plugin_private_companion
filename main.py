@@ -407,6 +407,13 @@ from .group_cycle_boundary import (
     build_group_cycle_boundary,
     group_cycle_boundary_prompt_section,
 )
+from .logging_util import get_module_logger
+
+# ``logger`` must be bound before the optional-module fallbacks below: each
+# degradation path reports the missing file through the logger, so leaving the
+# binding until later in the module turned a fail-open fallback into a
+# NameError that aborted the whole plugin import.
+logger = get_module_logger(__name__)
 try:
     from .group_member_safety import GroupMemberSafetyMixin
 except ModuleNotFoundError as exc:
@@ -532,9 +539,6 @@ from .planning import (
     normalize_story_plan,
     pick_detail_segment,
 )
-from .logging_util import get_module_logger
-
-logger = get_module_logger(__name__)
 
 _PRIVATE_COMPANION_RUNTIME_KEY = "_astrbot_private_companion_runtime_v1"
 
