@@ -10697,7 +10697,12 @@ class ProactiveEngineMixin:
         windows = self._reason_windows(reason, user)
         for start, end in windows:
             if start <= minute < end:
-                return timestamp + random.randint(0, 17 * 60)
+                # 窗口判定为半开区间 [start, end)，随机偏移收敛到 end-1 分钟。
+                eh, em = divmod(max(start, end - 1), 60)
+                window_end = datetime.combine(
+                    dt.date(), datetime.min.time(), tzinfo=dt.tzinfo
+                ).replace(hour=eh % 24, minute=em)
+                return min(timestamp + random.randint(0, 17 * 60), window_end.timestamp())
         first_start = windows[0][0]
         target_date = dt.date()
         if all(minute >= end for _, end in windows):
@@ -10707,7 +10712,13 @@ class ProactiveEngineMixin:
             hour=hour % 24,
             minute=minute_part,
         )
-        return target.timestamp() + random.randint(0, 59 * 60)
+        # 目标点同样按窗口上界收敛；check_in 等无二次保护的调用方依赖此处。
+        tail_end_min = max(windows[0][0], windows[0][1] - 1)
+        th, tm = divmod(tail_end_min, 60)
+        tail_window_end = datetime.combine(
+            target_date, datetime.min.time(), tzinfo=dt.tzinfo
+        ).replace(hour=th % 24, minute=tm)
+        return min(target.timestamp() + random.randint(0, 59 * 60), tail_window_end.timestamp())
 
     def _can_send_insomnia_night_message(
         self,
