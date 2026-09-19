@@ -18822,6 +18822,8 @@ class DailyStateMixin(DailyStateTickMixin):
                 "Body Monitor 事件拉取失败，本轮继续执行其他主动任务: %s",
                 _single_line(exc, 160),
             )
+        # HDSI 生命周期侧车在锁内只做标记，锁外执行（避免锁重入）。
+        hdsi_sidecar_pending = False
         async with self._data_lock:
             runtime = self.data.setdefault("proactive_runtime", {})
             if isinstance(runtime, dict):
@@ -18856,7 +18858,9 @@ class DailyStateMixin(DailyStateTickMixin):
                         {"users", "proactive_candidate_pool", "proactive_runtime"}
                     )
                 # HDSI life progression runs as an opt-in sidecar
-                await self._run_hdsi_life_tick_sidecar()
+                # 锁内只设标记：HDSI 生命周期侧车会重入 _data_lock，
+                # 必须在释放锁之后再执行（见锁外调用）。
+                hdsi_sidecar_pending = True
                 return
             if isinstance(runtime, dict):
                 runtime["generation_disabled"] = False
@@ -18870,7 +18874,12 @@ class DailyStateMixin(DailyStateTickMixin):
                         "external_event_self_link_cache",
                     }
                 )
-            users = list(self.data.get("users", {}).items())
+        if hdsi_sidecar_pending:
+            # HDSI 生命周期侧车必须在 _data_lock 之外执行：
+            # 其调用链会重新获取同一把非可重入 asyncio.Lock。
+            await self._run_hdsi_life_tick_sidecar()
+            return
+        users = list(self.data.get("users", {}).items())
 
         for user_id, user in users:
             await self._tick_user(user_id, user)
