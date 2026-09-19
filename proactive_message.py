@@ -11295,7 +11295,10 @@ class ProactiveMessageMixin(FinalResponsePersistenceMixin):
             1,
             30,
         )
-        cutoff = date.today() - timedelta(days=rotation_days - 1)
+        # 与写入侧 _today_key() 保持同一插件时区，避免截止日跨时区偏差一天。
+        cutoff = datetime.strptime(_today_key(), "%Y-%m-%d").date() - timedelta(
+            days=rotation_days - 1
+        )
         history: list[dict[str, Any]] = []
         for item in self._daily_outfit_history_items():
             profile = self._normalize_daily_outfit_profile(item.get("outfit_profile"))
