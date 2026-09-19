@@ -3256,12 +3256,19 @@ class GroupObservationMixin:
         if isinstance(raw, (int, float)) and raw > 1e12:
             raw = raw / 1000.0
         if isinstance(raw, (int, float)):
-            return max(0.0, float(_now_ts() - raw))
+            age = float(_now_ts() - raw)
+            # 未来时间戳（时钟漂移/异常写入）视为已过期，避免被当成“刚更新”而永不淘汰。
+            if age < 0.0:
+                return float("inf")
+            return age
         if isinstance(raw, str) and raw.strip():
             text = raw.strip()[:19]
             for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
                 try:
-                    return max(0.0, float(_now_ts() - datetime.strptime(text, fmt).timestamp()))
+                    age = float(_now_ts() - datetime.strptime(text, fmt).timestamp())
+                    if age < 0.0:
+                        return float("inf")
+                    return age
                 except Exception:
                     continue
         return 0.0
