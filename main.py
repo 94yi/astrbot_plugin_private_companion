@@ -143,6 +143,12 @@ from .helpers import (
     _today_key,
     _resolve_timezone_setting,
 )
+from .main_shared import (
+    _multi_persona_event_context,
+    _plugin_instance_can_dispatch,
+    _plugin_instance_root,
+    _private_companion_runtime,
+)
 from .config_migration import migrate_flat_config_into_schema_groups
 from .group_context_interception import (
     intercept_astrbot_group_context,
@@ -284,53 +290,6 @@ _WINDOWS_RESERVED_FILENAME_STEMS = frozenset(
 )
 
 
-def _multi_persona_event_context(function):
-    """Bind one event task to one persona profile for the complete event lifetime."""
-    if inspect.isasyncgenfunction(function):
-        @functools.wraps(function)
-        async def asyncgen_wrapper(self, event, *args, **kwargs):
-            if not _plugin_instance_can_dispatch(self):
-                return
-            scope_checker = getattr(self, "_bot_scope_allows_event", None)
-            if callable(scope_checker) and not scope_checker(event):
-                return
-            activator = getattr(self, "_activate_persona_for_event_context", None)
-            if not callable(activator):
-                activator = getattr(self, "_activate_persona_for_event", None)
-            activation = activator(event) if callable(activator) else (None, "")
-            if inspect.isawaitable(activation):
-                activation = await activation
-            token, _ = activation
-            try:
-                async for item in function(self, event, *args, **kwargs):
-                    yield item
-            finally:
-                deactivator = getattr(self, "_deactivate_persona_for_event", None)
-                if callable(deactivator):
-                    deactivator(token)
-        return asyncgen_wrapper
-
-    @functools.wraps(function)
-    async def async_wrapper(self, event, *args, **kwargs):
-        if not _plugin_instance_can_dispatch(self):
-            return None
-        scope_checker = getattr(self, "_bot_scope_allows_event", None)
-        if callable(scope_checker) and not scope_checker(event):
-            return None
-        activator = getattr(self, "_activate_persona_for_event_context", None)
-        if not callable(activator):
-            activator = getattr(self, "_activate_persona_for_event", None)
-        activation = activator(event) if callable(activator) else (None, "")
-        if inspect.isawaitable(activation):
-            activation = await activation
-        token, _ = activation
-        try:
-            return await function(self, event, *args, **kwargs)
-        finally:
-            deactivator = getattr(self, "_deactivate_persona_for_event", None)
-            if callable(deactivator):
-                deactivator(token)
-    return async_wrapper
 from .busy_reply_gate import BusyReplyGateMixin
 from .chronotype import ChronotypeMixin
 from .memory_companion_adapter import MemoryCompanionAdapterMixin
@@ -544,43 +503,14 @@ from .planning import (
 _PRIVATE_COMPANION_RUNTIME_KEY = "_astrbot_private_companion_runtime_v1"
 
 
-def _new_private_companion_runtime() -> ModuleType:
-    runtime = ModuleType(_PRIVATE_COMPANION_RUNTIME_KEY)
-    runtime.lock = threading.RLock()
-    runtime.active_plugin = None
-    return runtime
 
-
-_private_companion_runtime = sys.modules.setdefault(
-    _PRIVATE_COMPANION_RUNTIME_KEY,
-    _new_private_companion_runtime(),
-)
 _private_companion_plugin: Any | None = _private_companion_runtime.active_plugin
 
-
-def _plugin_instance_root(instance: Any) -> str:
-    """Return the data/plugins directory name that imported an instance."""
-    module_name = str(getattr(type(instance), "__module__", "") or "")
-    parts = module_name.split(".")
-    if len(parts) >= 3 and parts[:2] == ["data", "plugins"]:
-        return parts[2]
-    return ""
 
 
 def _is_primary_plugin_instance(instance: Any) -> bool:
     return _plugin_instance_root(instance) == PLUGIN_NAME
 
-
-def _plugin_instance_can_dispatch(instance: Any) -> bool:
-    if bool(getattr(instance, "_private_companion_duplicate_instance", False)):
-        return False
-    if not bool(getattr(instance, "_private_companion_instance_guard_enabled", False)):
-        return True
-    with _private_companion_runtime.lock:
-        return (
-            _private_companion_runtime.active_plugin is None
-            or _private_companion_runtime.active_plugin is instance
-        )
 
 
 class _OneBotReactionImage(BaseMessageComponent):
