@@ -9,6 +9,8 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from tests.module_source_index import find_method
+
 
 class EmotionE1PromptCacheTests(unittest.TestCase):
     def test_expression_decision_is_a_forced_dynamic_fragment(self) -> None:
@@ -42,14 +44,11 @@ class EmotionE1PromptCacheTests(unittest.TestCase):
         self.assertEqual([], assignments)
 
     def test_turn_fragment_helper_delegates_typed_section_and_force_dynamic(self) -> None:
-        source = (ROOT / "main.py").read_text(encoding="utf-8")
-        tree = ast.parse(source)
-        helper = next(
-            node
-            for node in ast.walk(tree)
-            if isinstance(node, ast.FunctionDef)
-            and node.name == "_append_turn_prompt_fragment_by_position"
+        # 该 helper 已随提示词编排域拆到 main_prompt.py，故跨宿主 + 各域 mixin 定位。
+        helper = find_method(
+            ROOT, "main", "PrivateCompanionPlugin", "_append_turn_prompt_fragment_by_position"
         )
+        self.assertIsNotNone(helper)
         parameters = [arg.arg for arg in helper.args.args + helper.args.kwonlyargs]
         self.assertEqual(
             ["self", "req", "marker", "section", "priority", "force_dynamic"],
