@@ -4,6 +4,8 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from tests.module_source_index import page_api_source_text
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -16,7 +18,7 @@ class ImageModelConfigUiTests(unittest.TestCase):
             ROOT / "pages" / "陪伴面板" / "js" / "panels" / "provider-tree.js"
         ).read_text(encoding="utf-8")
         cls.html = (ROOT / "pages" / "陪伴面板" / "index.html").read_text(encoding="utf-8")
-        cls.api = (ROOT / "page_api.py").read_text(encoding="utf-8")
+        cls.api = page_api_source_text(ROOT)
 
     def test_model_page_has_separate_image_model_navigation(self) -> None:
         self.assertIn('data-models-section="providers"', self.html)

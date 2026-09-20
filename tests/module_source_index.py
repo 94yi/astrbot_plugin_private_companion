@@ -207,3 +207,24 @@ def class_body_span(node: ast.ClassDef) -> int:
 def method_span(node: ast.FunctionDef | ast.AsyncFunctionDef) -> int:
     """方法行数（含装饰器与 def 行），用于架构边界断言。"""
     return node.end_lineno - node.lineno + 1
+
+
+def host_source_text(root: Path, host: str = "main") -> str:
+    """宿主类所在模块族的源码全文拼接。
+
+    方法按域拆到 ``main_*.py`` / ``page_api_*.py`` 后，只读宿主单文件会漏掉已
+    搬走的实现。凡是「在源码里找某个字符串/片段」的断言，都应改用本函数。
+    """
+    return "\n".join(
+        path.read_text(encoding="utf-8") for path in host_sources(root, host)
+    )
+
+
+def main_source_text(root: Path) -> str:
+    """``host_source_text(root, "main")`` 的便捷别名。"""
+    return host_source_text(root, "main")
+
+
+def page_api_source_text(root: Path) -> str:
+    """``host_source_text(root, "page_api")`` 的便捷别名。"""
+    return host_source_text(root, "page_api")

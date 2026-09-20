@@ -4,6 +4,8 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from tests.module_source_index import page_api_source_text
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -31,12 +33,12 @@ class OpenRouterConfigUiTests(unittest.TestCase):
                     self.assertIn(f'"{alias}": "openrouter"', spec)
 
     def test_runtime_endpoint_summary_uses_openrouter_label(self) -> None:
-        source = (ROOT / "page_api.py").read_text(encoding="utf-8")
+        source = page_api_source_text(ROOT)
         labels = source.split("platform_labels = {", 1)[1].split("}", 1)[0]
         self.assertIn('"openrouter": "OpenRouter"', labels)
 
     def test_404_is_classified_as_endpoint_mismatch_before_network(self) -> None:
-        source = (ROOT / "page_api.py").read_text(encoding="utf-8")
+        source = page_api_source_text(ROOT)
         rules = source.split("rules = [", 1)[1]
         endpoint_rule = rules.index('"endpoint_mismatch"')
         network_rule = rules.index('"network"')
@@ -65,7 +67,7 @@ class OpenRouterConfigUiTests(unittest.TestCase):
 
     def test_schema_and_runtime_whitelist_document_openrouter(self) -> None:
         schema = (ROOT / "_conf_schema.json").read_text(encoding="utf-8")
-        page_api = (ROOT / "page_api.py").read_text(encoding="utf-8")
+        page_api = page_api_source_text(ROOT)
         self.assertIn("auto、openai、openrouter", schema)
         self.assertIn('"openrouter": "OpenRouter"', page_api)
         self.assertIn('"auto", "openai", "openrouter"', page_api)
