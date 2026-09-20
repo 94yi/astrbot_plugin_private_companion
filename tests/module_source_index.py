@@ -1,0 +1,209 @@
+# -*- coding: utf-8 -*-
+"""巨型模块拆分的跨模块 AST 源码定位辅助。
+
+背景
+----
+`main.py` 与 `page_api.py` 都曾是被拆分的巨型宿主模块。拆分后，宿主类
+``PrivateCompanionPlugin`` / ``PrivateCompanionPageApi`` 通过多继承把方法体留在
+各自的域 mixin 模块里（``main_req041.py``、``main_prompt.py``、
+``page_api_persona.py`` …）。
+
+大量既有测试用「读宿主单文件 → 找 ClassDef → 取方法」的方式做源码级断言。
+拆分后这类断言会因为方法不在宿主文件里而 KeyError / StopIteration。
+
+本模块提供统一的「宿主 + 各域模块」聚合扫描，让这些测试改一行即可继续工作，
+且**不改变断言语义**：仍然逐字比对方法源码，只是扩大查找范围。
+
+用法
+----
+    from module_source_index import main_sources, find_method, find_class
+
+    # 拿到宿主 + 全部域模块路径（按宿主优先排序）
+    for path in main_sources(ROOT):
+        ...
+
+    # 直接定位方法定义节点（宿主优先，找不到再找域模块）
+    node = find_method(ROOT, "main", "PrivateCompanionPlugin", "_req041_migration_source_files")
+"""
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+from typing import Iterable, Iterator
+
+# 宿主前缀 -> 该宿主拆分出的域模块 glob 前缀
+_HOST_SCOPE = {
+    "main": ("main.py", "main_*.py"),
+    "page_api": ("page_api.py", "page_api_*.py"),
+}
+
+
+def _scope_patterns(root: Path, host: str) -> tuple[str, ...]:
+    try:
+        return _HOST_SCOPE[host]
+    except KeyError as exc:  # pragma: no cover - 防御性
+        raise ValueError(
+            f"未知宿主 {host!r}，可选：{sorted(_HOST_SCOPE)}"
+        ) from exc
+
+
+def host_sources(root: Path, host: str = "main") -> list[Path]:
+    """返回宿主与其全部域模块的路径，宿主排第一，其余按文件名排序。
+
+    只返回真实存在的文件，避免拆分尚未完成时误报。
+    """
+    root = Path(root)
+    patterns = _scope_patterns(root, host)
+    paths: list[Path] = []
+    for index, pattern in enumerate(patterns):
+        found = sorted(root.glob(pattern))
+        if index == 0:
+            # 宿主优先：确保它在最前面
+            paths.extend(found)
+        else:
+            paths.extend(found)
+    # 去重且保序
+    seen: set[Path] = set()
+    ordered: list[Path] = []
+    for path in paths:
+        if path in seen:
+            continue
+        seen.add(path)
+        ordered.append(path)
+    return ordered
+
+
+# 兼容更贴近领域命名的调用写法
+def main_sources(root: Path) -> list[Path]:
+    return host_sources(root, "main")
+
+
+def page_api_sources(root: Path) -> list[Path]:
+    return host_sources(root, "page_api")
+
+
+def iter_module_sources(root: Path, host: str = "main") -> Iterator[tuple[Path, ast.Module]]:
+    """逐个产出 (路径, 已解析 AST)，跳过语法不可解析或读取失败的文件。"""
+    for path in host_sources(root, host):
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        except (OSError, SyntaxError):
+            continue
+        yield path, tree
+
+
+def find_class(
+    root: Path,
+    host: str,
+    class_name: str,
+) -> ast.ClassDef | None:
+    """在宿主 + 各域模块中定位类定义，返回首个命中。"""
+    for _path, tree in iter_module_sources(root, host):
+        for node in tree.body:
+            if isinstance(node, ast.ClassDef) and node.name == class_name:
+                return node
+    return None
+
+
+def _accept_class(name: str, concrete: str) -> bool:
+    """判断某个类名是否属于目标宿主族。
+
+    命中规则（任一成立即可）：
+    - 与具体宿主类名完全相同（如 ``PrivateCompanionPlugin``）；
+    - 以具体宿主类名开头（如 ``PrivateCompanionPluginReq041Mixin``）。
+    这样既能在宿主类体里找，也能在各域 mixin 类体里找。
+    """
+    return name == concrete or name.startswith(concrete)
+
+
+# 公开别名：供测试直接复用同一套「宿主族」判定规则
+class_matches_host = _accept_class
+
+
+def class_body_defs(
+    root: Path,
+    host: str,
+    class_name: str,
+) -> list[ast.stmt]:
+    """聚合「宿主类 + 其全部域 mixin 类」的类体语句。
+
+    返回顺序：宿主类体在前（若存在），随后按文件名排序的各域 mixin 类体。
+    用于替换测试里 ``owner.body`` 这种单类体遍历。
+    """
+    defs: list[ast.stmt] = []
+    for _path, tree in iter_module_sources(root, host):
+        for node in tree.body:
+            if not isinstance(node, ast.ClassDef):
+                continue
+            if not _accept_class(node.name, class_name):
+                continue
+            defs.extend(node.body)
+    return defs
+
+
+def iter_class_methods(
+    root: Path,
+    host: str,
+    class_name: str,
+) -> Iterator[tuple[ast.FunctionDef | ast.AsyncFunctionDef, str]]:
+    """逐个产出 (方法节点, 所在模块类名)。"""
+    for path, tree in iter_module_sources(root, host):
+        for node in tree.body:
+            if not isinstance(node, ast.ClassDef):
+                continue
+            if not _accept_class(node.name, class_name):
+                continue
+            for child in node.body:
+                if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    yield child, node.name
+
+
+def find_method(
+    root: Path,
+    host: str,
+    class_name: str,
+    method_name: str,
+) -> ast.FunctionDef | ast.AsyncFunctionDef | None:
+    """在宿主类与其全部域 mixin 类体中定位类方法定义，返回首个命中。"""
+    for child, _owner in iter_class_methods(root, host, class_name):
+        if child.name == method_name:
+            return child
+    # 兜底：跨模块自由函数 / 嵌套定义
+    for _path, tree in iter_module_sources(root, host):
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                and node.name == method_name
+            ):
+                return node
+    return None
+
+
+def find_methods(
+    root: Path,
+    host: str,
+    class_name: str,
+    names: Iterable[str],
+) -> dict[str, ast.FunctionDef | ast.AsyncFunctionDef]:
+    """批量定位，任一缺失即抛 KeyError（保留原测试的失败语义）。"""
+    result: dict[str, ast.FunctionDef | ast.AsyncFunctionDef] = {}
+    missing: list[str] = []
+    for name in names:
+        node = find_method(root, host, class_name, name)
+        if node is None:
+            missing.append(name)
+            continue
+        result[name] = node
+    if missing:
+        raise KeyError(missing)
+    return result
+
+
+def class_body_span(node: ast.ClassDef) -> int:
+    """类体行数（含装饰器与签名），用于架构边界断言。"""
+    return node.end_lineno - node.lineno + 1
+
+
+def method_span(node: ast.FunctionDef | ast.AsyncFunctionDef) -> int:
+    """方法行数（含装饰器与 def 行），用于架构边界断言。"""
+    return node.end_lineno - node.lineno + 1

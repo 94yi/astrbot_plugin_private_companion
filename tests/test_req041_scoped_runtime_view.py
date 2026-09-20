@@ -22,6 +22,8 @@ from scoped_runtime_view import (
 
 ROOT = Path(__file__).resolve().parents[1]
 
+from tests.module_source_index import class_matches_host as _class_matches
+
 
 def _approved_rule(rule_id: str, evidence_count: int = 1, *, kind: str = "private") -> dict:
     context = SimpleNamespace(
@@ -38,22 +40,45 @@ def _approved_rule(rule_id: str, evidence_count: int = 1, *, kind: str = "privat
 
 
 def _method_from(path: Path, class_name: str, method_name: str, globals_map: dict):
-    tree = ast.parse(path.read_text(encoding="utf-8"))
-    class_node = next(
-        item for item in tree.body if isinstance(item, ast.ClassDef) and item.name == class_name
-    )
-    method = next(
-        item for item in class_node.body
-        if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)) and item.name == method_name
-    )
-    module = ast.Module(
-        body=[ast.ImportFrom(module="__future__", names=[ast.alias("annotations")], level=0), method],
-        type_ignores=[],
-    )
-    ast.fix_missing_locations(module)
-    namespace = dict(globals_map)
-    exec(compile(module, str(path), "exec"), namespace)
-    return namespace[method_name]
+    # 巨型模块拆分后，方法体可能已从 path 迁到同前缀的域 mixin 模块
+    # （main.py -> main_*.py，page_api.py -> page_api_*.py）。
+    # 优先在原 path 找；找不到则在其域模块族里找，保持原有执行语义。
+    candidates = [path]
+    if path.name == "main.py":
+        candidates.extend(sorted(path.parent.glob("main_*.py")))
+    elif path.name == "page_api.py":
+        candidates.extend(sorted(path.parent.glob("page_api_*.py")))
+    for candidate in candidates:
+        tree = ast.parse(candidate.read_text(encoding="utf-8"), filename=str(candidate))
+        class_node = next(
+            (
+                item
+                for item in tree.body
+                if isinstance(item, ast.ClassDef) and _class_matches(item.name, class_name)
+            ),
+            None,
+        )
+        if class_node is None:
+            continue
+        method = next(
+            (
+                item
+                for item in class_node.body
+                if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)) and item.name == method_name
+            ),
+            None,
+        )
+        if method is None:
+            continue
+        module = ast.Module(
+            body=[ast.ImportFrom(module="__future__", names=[ast.alias("annotations")], level=0), method],
+            type_ignores=[],
+        )
+        ast.fix_missing_locations(module)
+        namespace = dict(globals_map)
+        exec(compile(module, str(candidate), "exec"), namespace)
+        return namespace[method_name]
+    raise StopIteration(method_name)
 
 
 def _safe_int(value, default=0, minimum=0, maximum=None):
