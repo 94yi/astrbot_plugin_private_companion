@@ -157,11 +157,12 @@ class PageApiIncrementalPersistenceTests(unittest.TestCase):
         self.assertIn("_save_data_sync(sections=save_sections)", source)
 
     def test_migration_import_saves_the_normalized_data_sections(self) -> None:
+        # 迁移域方法已搬到 page_api_migration.py，故用 _function_anywhere 定位。
         entry_source = ast.unparse(
-            _function(PAGE_API, "_apply_migration_normalized")
+            _function_anywhere("_apply_migration_normalized")
         )
         commit_source = ast.unparse(
-            _function(PAGE_API, "_commit_migration_normalized")
+            _function_anywhere("_commit_migration_normalized")
         )
 
         self.assertIn("validator(set(data_payload), (), None)", entry_source)
