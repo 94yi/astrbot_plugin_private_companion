@@ -19,7 +19,6 @@ if PACKAGE not in sys.modules:
     spec.loader.exec_module(package)
 
 from astrbot_plugin_private_companion import command_handlers, page_api, photo_reference_metadata
-from astrbot_plugin_private_companion import page_api_media, page_api_persona
 from astrbot_plugin_private_companion.conversation_prompt_section import (
     prompt_heading_ref,
     render_prompt_content,
@@ -27,17 +26,18 @@ from astrbot_plugin_private_companion.conversation_prompt_section import (
 
 
 def _page_api_domain_sources() -> list[str]:
-    """宿主模块 + 各 mixin 模块的源码。
+    """宿主 page_api.py + 全部 page_api_* 域 mixin 模块的源码。
 
     页面 API 已按域拆分为多个文件，section key 的声明会随着方法一起搬家，
     所以任何「扫描页面 API 源码」的断言都必须合并扫描全部域模块。
+    这里按文件 glob 动态发现域模块，新增域时无需再改本测试。
     """
-    modules = (page_api, page_api_media, page_api_persona)
+    domain_paths = sorted(ROOT.glob("page_api_*.py"))
     sources: list[str] = []
-    for module in modules:
+    for path in [ROOT / "page_api.py", *domain_paths]:
         try:
-            sources.append(inspect.getsource(module))
-        except (OSError, TypeError):
+            sources.append(path.read_text(encoding="utf-8"))
+        except OSError:
             continue
     return sources
 
