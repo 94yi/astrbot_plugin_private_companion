@@ -30,6 +30,19 @@ from .page_backend import MigrationBackupService, build_route_bindings, generati
 
 logger = get_module_logger(__name__)
 
+# 本域方法在宿主模块中用到的模块级常量。
+# 拆分后方法体留在本模块，名字必须在本模块可解析，否则运行期 NameError。
+PLUGIN_NAME = "astrbot_plugin_private_companion"
+_MIGRATION_UNKNOWN_CONFIG_KEY = "_migration_unknown_config_fields_v1"
+_MIGRATION_UNKNOWN_NAMESPACES = ("settings", "features", "providers")
+_MIGRATION_UNKNOWN_MAX_BYTES = 256 * 1024
+_MIGRATION_UNKNOWN_MAX_FIELDS = 128
+_MIGRATION_UNKNOWN_SENSITIVE_NAME = re.compile(
+    r"(?:access[_-]?token|password|secret|cookie|api[_-]?key|storage[_-])",
+    flags=re.I,
+)
+EXTENSION_MIGRATION_NOTICE_VERSION = "6.2.2"
+
 
 class PrivateCompanionPageApiMigrationMixin:
     """配置迁移 / 导入导出 / 备份 域（从 PrivateCompanionPageApi 拆出）。"""

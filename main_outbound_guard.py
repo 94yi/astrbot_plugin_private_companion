@@ -29,6 +29,11 @@ from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.provider import ProviderRequest
 from typing import Any
 
+try:
+    from astrbot.api.message_components import Image, Plain
+except ImportError:  # pragma: no cover - 兼容旧版 AstrBot
+    from astrbot.core.message.components import Image, Plain
+
 from .logging_util import get_module_logger
 
 logger = get_module_logger(__name__)
