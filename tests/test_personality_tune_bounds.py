@@ -23,15 +23,32 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PAGE_API = REPO_ROOT / "page_api.py"
+# 页面 API 已按域拆分；人格/人设域的方法与模块级函数在 persona mixin 里，
+# 因此扫描时必须覆盖宿主文件与相关 mixin 文件。
+PAGE_API_DOMAIN_FILES = (
+    REPO_ROOT / "page_api.py",
+    REPO_ROOT / "page_api_persona.py",
+    REPO_ROOT / "page_api_media.py",
+)
 
 
 def _read_source() -> str:
+    """宿主 page_api.py 的源码（兼容旧断言）。"""
     return PAGE_API.read_text(encoding="utf-8")
+
+
+def _read_domain_source() -> str:
+    """宿主 + 各 mixin 域文件的合并源码。"""
+    parts: list[str] = []
+    for path in PAGE_API_DOMAIN_FILES:
+        if path.exists():
+            parts.append(path.read_text(encoding="utf-8"))
+    return "\n".join(parts)
 
 
 def test_no_degenerate_between_zero_and_two_guard() -> None:
     """``0 < int(...) < 2`` 是恒假条件，属于死代码。"""
-    source = _read_source()
+    source = _read_domain_source()
     # 只匹配「0 < xxx < 2」这种整数不可能落在其中的区间
     pattern = re.compile(r"0\s*<\s*[^\n<]*?<\s*2\s*:")
     hits = pattern.findall(source)
@@ -43,7 +60,7 @@ def test_no_degenerate_between_zero_and_two_guard() -> None:
 
 def test_avoidant_branch_reachable_for_low_cap() -> None:
     """回避型收缩风险分支必须能在 max_daily_messages 偏低时触发兜底。"""
-    source = _read_source()
+    source = _read_domain_source()
     tree = ast.parse(source)
     found: list[str] = []
     for node in ast.walk(tree):

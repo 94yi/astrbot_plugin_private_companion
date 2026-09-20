@@ -19,10 +19,27 @@ if PACKAGE not in sys.modules:
     spec.loader.exec_module(package)
 
 from astrbot_plugin_private_companion import command_handlers, page_api, photo_reference_metadata
+from astrbot_plugin_private_companion import page_api_media, page_api_persona
 from astrbot_plugin_private_companion.conversation_prompt_section import (
     prompt_heading_ref,
     render_prompt_content,
 )
+
+
+def _page_api_domain_sources() -> list[str]:
+    """宿主模块 + 各 mixin 模块的源码。
+
+    页面 API 已按域拆分为多个文件，section key 的声明会随着方法一起搬家，
+    所以任何「扫描页面 API 源码」的断言都必须合并扫描全部域模块。
+    """
+    modules = (page_api, page_api_media, page_api_persona)
+    sources: list[str] = []
+    for module in modules:
+        try:
+            sources.append(inspect.getsource(module))
+        except (OSError, TypeError):
+            continue
+    return sources
 
 
 class PageBackgroundPromptAuthoringTests(unittest.TestCase):
@@ -60,7 +77,9 @@ class PageBackgroundPromptAuthoringTests(unittest.TestCase):
         )
 
     def test_page_llm_prompt_producers_declare_stable_section_keys(self) -> None:
-        source = inspect.getsource(page_api)
+        # 页面 API 已按域拆成多个 mixin 模块；section key 的声明跟着方法走，
+        # 因此要合并扫描宿主模块与各 mixin 模块。
+        source = "\n".join(_page_api_domain_sources())
         expected = (
             "background.reaction_library.analysis",
             "background.photo_reference_selection_trial",
