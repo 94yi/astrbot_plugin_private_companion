@@ -1643,6 +1643,21 @@ async def _mark_hdsi_inbound(plugin: Any, event: Any) -> None:
         return
 
 
+# 本插件的部分 @filter.* hook 定义在子模块（atrelay / main_outbound_guard / main_prompt 等）里。
+# AstrBot 的 get_handlers_by_event_type(only_activated=True) 按 handler_module_path 去
+# star_map 反查插件元数据，而 star_map 只登记插件主模块路径，故这些 handler 会被静默跳过。
+# 这里统一把它们重绑到主模块路径，使其能通过 only_activated 反查。
+from .handler_binding import bind_submodule_handlers as _bind_submodule_handlers  # noqa: E402
+
+_PACKAGE_NAME = __package__ or "astrbot_plugin_private_companion"
+for _pkg in {_PACKAGE_NAME, _PACKAGE_NAME.rsplit(".", 1)[0]}:
+    try:
+        _bind_submodule_handlers(_pkg, f"{_pkg}.main")
+    except Exception:
+        # 绑定失败不应阻断插件加载。
+        pass
+
+
 
 
 
