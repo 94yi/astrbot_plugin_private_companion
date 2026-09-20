@@ -311,6 +311,8 @@ EXTERNAL_API_TEST_SECRET_FIELDS = frozenset(
 PAGE_PRIVATE_CONFIG_KEYS = frozenset({"standalone_webui_access_token"})
 
 
+_DEBUG_TAIL_MAX_WINDOW_BYTES = 16 * 1024 * 1024
+
 class _PageApiError(dict[str, Any]):
     """Dictionary-compatible API error with HTTP-only status metadata."""
 
@@ -5371,34 +5373,28 @@ class PrivateCompanionPageApi(
         if tail_lines is None:
             return path.read_text(encoding="utf-8", errors="replace").splitlines()
         limit = max(1, min(4096, int(tail_lines)))
+        chunk_size = max(64 * 1024, limit * 2048)
+        max_window = min(_DEBUG_TAIL_MAX_WINDOW_BYTES, 16 * 1024 * 1024)
         with path.open("rb") as handle:
             handle.seek(0, 2)
             end = handle.tell()
-            maximum = min(end, 1024 * 1024)
-            size = min(maximum, max(64 * 1024, limit * 2048))
-            offset = end - size
-            starts_on_boundary = offset == 0
-            while offset > 0 and not starts_on_boundary and size < maximum:
-                handle.seek(offset - 1)
-                starts_on_boundary = handle.read(1) == b"\n"
-                if starts_on_boundary:
+            window_start = end
+            found_newline = False
+            newline_count = 0
+            while window_start > 0:
+                window_start = max(0, window_start - chunk_size)
+                chunk_size = min(max_window, chunk_size * 2)
+                handle.seek(window_start)
+                chunk = handle.read(end - window_start)
+                found_newline = b"\n" in chunk
+                newline_count = chunk.count(b"\n")
+                # 已回溯到文件头，或缓冲区里已包含足够多的完整记录（末尾那条视为最新记录）。
+                if window_start == 0 or newline_count > limit:
                     break
-                size = min(maximum, size * 2)
-                offset = end - size
-                if offset == 0:
-                    starts_on_boundary = True
-                    break
-            if offset > 0 and not starts_on_boundary:
-                handle.seek(offset - 1)
-                starts_on_boundary = handle.read(1) == b"\n"
-            handle.seek(offset)
-            content = handle.read(size)
-        if not starts_on_boundary:
-            # The hard cap cut through an oversized line. Do not hand a
-            # malformed partial record to the JSON parser; later full lines
-            # are still returned when present.
-            newline = content.find(b"\n")
-            content = content[newline + 1:] if newline >= 0 else b""
+        content = chunk if window_start < end else b""
+        if window_start > 0 and found_newline:
+            # 窗口起点落在某条记录内部：丢掉开头那条不完整记录。
+            content = content[content.find(b"\n") + 1:]
         return content.decode("utf-8", "replace").splitlines()[-limit:]
 
     @staticmethod
@@ -11339,7 +11335,9 @@ class PrivateCompanionPageApi(
             return self._exception_error("首次配置落地失败")
 
     def _setup_guide_fallback_daily_plan(self, reason: str = "timeout") -> dict[str, Any]:
-        now = datetime.now().strftime("%Y-%m-%d %H:%M")
+        # 与同一计划里的 "date"(_today_key()，插件时区)保持一致，
+        # 避免宿主时区与插件时区不同时 "generated_at" 与 "date" 跨天不一致。
+        now = datetime.strptime(_today_key(), "%Y-%m-%d").strftime("%Y-%m-%d %H:%M")
         plan = {
             "date": _today_key(),
             "generated_at": now,
