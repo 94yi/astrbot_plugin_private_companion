@@ -873,7 +873,10 @@ class PrivateCompanionPageApi(
                 if "T" in raw_date:
                     raw_date = raw_date.split("T", 1)[0]
                 display_date = raw_date
-                repeat_yearly = self._normalize_bool_value(entry.get("repeat_yearly", len(raw_date) == 5))
+                # 只有「月-日」写法（03-05）才默认按年重复；带年份（2026-03-05）或带时间戳时默认单次，避免同一字段的默认值随书写格式漂移。
+                repeat_yearly = self._normalize_bool_value(
+                    entry.get("repeat_yearly", len(raw_date) == 5 and raw_date[2:3] == "-")
+                )
                 month_day = raw_date[5:] if len(raw_date) >= 10 and raw_date[4:5] == "-" else raw_date
                 if repeat_yearly and len(month_day) == 5:
                     try:
@@ -20418,7 +20421,7 @@ class PrivateCompanionPageApi(
             elif "回避型收缩风险" in dimension:
                 lower_to("min_interval_minutes", 240, 60, "回避型收缩风险，保留低打扰入口", 120)
                 lower_to("idle_minutes", 120, 30, "回避型收缩风险，避免完全退开", 60)
-                if 0 < current_int("max_daily_messages", 8) < 2:
+                if current_int("max_daily_messages", 8) < 2:  # 上限已被压到 2 以下时保留低频兜底
                     propose("max_daily_messages", 2, "回避型收缩风险，保留很低频主动上限")
                 if current_int("proactive_persona_judge_send_threshold", 62) > 70:
                     lower_to("proactive_persona_judge_send_threshold", 66, 4, "回避型收缩风险，放宽过高的主动阈值", 62)
