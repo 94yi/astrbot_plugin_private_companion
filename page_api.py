@@ -5373,25 +5373,35 @@ class PrivateCompanionPageApi(
         if tail_lines is None:
             return path.read_text(encoding="utf-8", errors="replace").splitlines()
         limit = max(1, min(4096, int(tail_lines)))
+        # 从文件尾往前读：先读一个小窗口，只有窗口里没有换行（说明落进了超长行）
+        # 才按指数放大，避免在正常日志上把整个文件读进内存。
         chunk_size = max(64 * 1024, limit * 2048)
         max_window = min(_DEBUG_TAIL_MAX_WINDOW_BYTES, 16 * 1024 * 1024)
+        content = b""
         with path.open("rb") as handle:
             handle.seek(0, 2)
             end = handle.tell()
             window_start = end
             found_newline = False
-            newline_count = 0
             while window_start > 0:
                 window_start = max(0, window_start - chunk_size)
-                chunk_size = min(max_window, chunk_size * 2)
                 handle.seek(window_start)
-                chunk = handle.read(end - window_start)
-                found_newline = b"\n" in chunk
-                newline_count = chunk.count(b"\n")
-                # 已回溯到文件头，或缓冲区里已包含足够多的完整记录（末尾那条视为最新记录）。
-                if window_start == 0 or newline_count > limit:
+                window = handle.read(end - window_start)
+                if b"\n" in window and (window_start == 0 or window.count(b"\n") > limit):
+                    content = window
+                    found_newline = True
                     break
-        content = chunk if window_start < end else b""
+                if window_start == 0:
+                    # 整个文件都在同一段缓冲里（含只有一条超长记录的极端情况）。
+                    content = window
+                    found_newline = b"\n" in window
+                    break
+                if end - window_start >= max_window:
+                    # 命中硬上限：保留窗口内最新的一段，绝不把 tail 读成空白。
+                    content = window
+                    found_newline = b"\n" in window
+                    break
+                chunk_size = min(max_window, chunk_size * 2)
         if window_start > 0 and found_newline:
             # 窗口起点落在某条记录内部：丢掉开头那条不完整记录。
             content = content[content.find(b"\n") + 1:]
