@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import re
 import sys
 from pathlib import Path
 
@@ -422,9 +423,12 @@ def main() -> int:
     #   2) 剩余代码裸引用已搬走的模块级函数/常量
     # 注意 `self._xxx()` 是 Attribute 而非 Name，不会被误报（继承链能解析）。
     moved_names = set(wanted) | set(funcs_wanted) | set(attrs_wanted)
-    moved_lines: set[int] = set()
+    # 注意：这个集合**不能叫 moved_lines** —— 上面 L372 的 `moved_lines` 是
+    # 行数（int），docstring 模板会用它。曾因同名覆盖导致生成的模块 docstring
+    # 里打印出一个 set 字面量 `{5699, 5293, ...}`。
+    moved_line_set: set[int] = set()
     for s, e in all_spans:
-        moved_lines.update(range(s, e + 1))
+        moved_line_set.update(range(s, e + 1))
 
     residual: dict[str, list[str]] = {}
     for node in ast.walk(tree):
@@ -432,9 +436,40 @@ def main() -> int:
             continue
         if node.id not in moved_names:
             continue
-        if node.lineno in moved_lines:
+        if node.lineno in moved_line_set:
             continue
         residual.setdefault(node.id, []).append(f"L{node.lineno}")
+
+    # ---- 宿主类名硬引用检查（本轮 meal 域实测踩到） ----
+    # 形如 `HostClass.some_method(x)` 的**类上调用**。方法搬到新模块后，
+    # `HostClass` 这个名字在新模块里不存在 → 运行到即 NameError。
+    # 处置：改写成 `NewClass.some_method(x)`。安全的充要条件是 some_method
+    # 也在本次搬运集合内（同一新模块的类上能解析到它）；否则新类上也找不到，
+    # 必须人工决策（例如改成 self.xxx 或把该方法一并纳入本域）。
+    host_refs: dict[str, list[int]] = {}
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Attribute)
+            and isinstance(node.value, ast.Name)
+            and node.value.id == args.host_class
+            and node.lineno in moved_line_set
+        ):
+            host_refs.setdefault(node.attr, []).append(node.lineno)
+    bad_host_refs = {a: locs for a, locs in host_refs.items() if a not in moved_names}
+    host_ref_lines = {ln for locs in host_refs.values() for ln in locs}
+
+    print("\n-- 宿主类名硬引用检查 --")
+    if not host_refs:
+        print(f"   无（搬走的代码里没有 `{args.host_class}.xxx` 形式的类上调用）")
+    else:
+        for attr, locs in sorted(host_refs.items()):
+            mark = "改写" if attr in moved_names else "!! 无法自动处置"
+            print(f"   {args.host_class}.{attr:<44} {locs[:4]}  [{mark}]")
+        if bad_host_refs:
+            print("   以下被引用的方法不在本次搬运集合内，改写成新类名也无法解析：")
+            for attr in sorted(bad_host_refs):
+                print(f"      {attr}")
+            print("   处置：把它加入本域清单，或把调用点改为 self.xxx。")
 
     print(f"\n-- 宿主残留裸引用检查 --")
     if residual:
@@ -466,18 +501,32 @@ def main() -> int:
             "宿主仍裸引用已搬走的名字，拒绝落盘（否则运行到即 NameError）："
             f"{sorted(residual)}"
         )
+    if bad_host_refs:
+        raise SystemExit(
+            "搬走的代码里有无法自动处置的宿主类名硬引用，拒绝落盘："
+            f"{sorted(bad_host_refs)}（把被引用的方法加入本域清单，或改调用点为 self.xxx）"
+        )
 
     # ---- 组装新模块 ----
     # 关键：模块级成员（缩进 0）必须放在 `class` 声明**之前**，类成员（缩进 4）
     # 必须在其后。若把两者按行号混排在同一序列里，缩进 0 的模块级函数会终结
     # 类体，紧随其后的类方法会被解析成前一个函数的函数体（缩进同为 4）——
     # 实测会让 78 个方法整体"消失"进一个函数里。
+    host_ref_re = re.compile(
+        rb"\b" + re.escape(args.host_class.encode("utf-8")) + rb"\."
+    )
+    new_class_bytes = args.new_class.encode("utf-8") + b"."
+
     module_out: list[bytes] = []
     class_out: list[bytes] = []
     for s, e in all_spans:
         bucket = module_out if (s, e) in func_spans else class_out
         for i in range(s, e + 1):
-            bucket.append(lines[i - 1])
+            raw = lines[i - 1]
+            # 只改写**已确认**含类上调用的行，避免波及无关行（含字符串/注释）
+            if i in host_ref_lines:
+                raw = host_ref_re.sub(new_class_bytes, raw)
+            bucket.append(raw)
         bucket.append(b"")
     for bucket in (module_out, class_out):
         while len(bucket) >= 2 and bucket[-1] == b"" and bucket[-2] == b"":
