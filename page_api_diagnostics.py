@@ -17,6 +17,11 @@ import uuid
 from copy import copy, deepcopy
 from typing import Any, Mapping
 from quart import request, send_file
+from .conversation_prompt_section import (
+    PromptRenderMode,
+    prompt_section,
+    render_prompt_sections,
+)
 from .diagnostic_envelope import DIAGNOSTIC_ENVELOPE_VERSION, diagnostic_test_id, normalize_diagnostic_result
 from .helpers import _MISSING, _flat_get, _normalize_timezone_name, _normalize_timezone_setting, _path_text, _redact_outbound_secrets, _safe_int, _set_into_config, _strip_internal_message_blocks, _text_looks_garbled, _text_similarity, _today_key, normalize_bot_relationship_cards
 from .persona_config import runtime_persona_setting
