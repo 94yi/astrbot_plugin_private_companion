@@ -67,16 +67,12 @@ def _controller(*, drain: float = 0.2, ttl: float = 1.0):
 
 
 def _persona_id_harness_type() -> type:
-    tree = ast.parse((ROOT / "main.py").read_text(encoding="utf-8"))
-    owner = next(
-        node
-        for node in tree.body
-        if isinstance(node, ast.ClassDef)
-        and node.name == "PrivateCompanionPlugin"
-    )
+    # _persona_profile_ids 已拆入 main_persona_routing.py 的域 mixin，故不能只读
+    # 宿主单文件 main.py；改用跨模块聚合的 class_body_defs 收集目标方法。
+    from module_source_index import class_body_defs
     methods = [
         copy.deepcopy(node)
-        for node in owner.body
+        for node in class_body_defs(ROOT, "main", "PrivateCompanionPlugin")
         if isinstance(node, ast.FunctionDef)
         and node.name in {
             "_configured_multi_persona_ids",
@@ -570,7 +566,21 @@ def test_strict_persona_id_enumeration_rejects_ambiguous_config_and_symlinks(
         host._persona_profile_ids(strict=True)
 
 
-def _decorators(filename: str, class_name: str) -> dict[str, set[str]]:
+def _decorators(filename: str, class_name: str, aggregate: bool = False) -> dict[str, set[str]]:
+    if aggregate:
+        # _apply_migration_normalized 已拆入 page_api_migration.py 的域 mixin，
+        # 只读宿主 page_api.py 会漏掉它；改用跨模块聚合的 iter_class_methods。
+        from module_source_index import iter_class_methods
+        from pathlib import Path as _Path
+        result: dict[str, set[str]] = {}
+        for method, _owner in iter_class_methods(ROOT, _Path(filename).stem, class_name):
+            result[method.name] = {
+                decorator.func.id
+                for decorator in method.decorator_list
+                if isinstance(decorator, ast.Call)
+                and isinstance(decorator.func, ast.Name)
+            }
+        return result
     tree = ast.parse((ROOT / filename).read_text(encoding="utf-8"))
     owner = next(
         node
@@ -616,7 +626,7 @@ def test_story_mutation_root_allowlist_is_gated_and_read_tool_stays_read_only() 
             "story_legacy_sync_operation",
         }
 
-    page = _decorators("page_api.py", "PrivateCompanionPageApi")
+    page = _decorators("page_api.py", "PrivateCompanionPageApi", aggregate=True)
     for name in {
         "update_creative_project",
         "update_creative_chunk",
