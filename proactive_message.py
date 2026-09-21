@@ -5713,6 +5713,16 @@ class ProactiveMessageMixin(FinalResponsePersistenceMixin):
         cleaned = _single_line(text, 500)
         if not cleaned:
             return {"decision": "drop", "reason": "主动消息为空", "hard": True}
+        if re.search(
+            r"(?:明天起|从明天起|以后|今后|往后|接下来)"
+            r"[^。！？!?\n]{0,32}(?:告诉你|提醒你|通知你)",
+            cleaned,
+        ):
+            return {
+                "decision": "drop",
+                "reason": "主动正文重新承诺未来提醒，但本轮没有新建任务的执行凭证",
+                "hard": True,
+            }
         external_info_reasons = {"bili_video_share", "news_share", "web_exploration_share"}
         external_share_active = reason in external_info_reasons
         link_platform_mismatch = self._proactive_link_platform_mismatch_reason(cleaned)
