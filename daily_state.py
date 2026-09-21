@@ -4882,19 +4882,7 @@ class DailyStateMixin(DailyStateTickMixin, DailyStateWeatherMixin, DailyStateTim
             text = text[:max_chars]
         return text or "暂无可用的昨日屏幕观察日记。"
 
-    # ------------------------------------------------------------------
-    # Weather alerts (QWeather)
-    # ------------------------------------------------------------------
-    # These helpers deliberately stop at structured retrieval and caching.
-    # Proactive delivery, severity policy, and prompt wording belong to the
-    # caller so a failed provider request cannot itself trigger a message.
 
-    # ------------------------------------------------------------------
-    # QWeather ordinary conditions
-    # ------------------------------------------------------------------
-    # Ordinary conditions and official alerts intentionally share the same
-    # Host/credential pair.  These helpers keep provider details out of the
-    # weather cache and preserve the screen_companion fallback on failure.
 
     def _detect_care_feedback(self, text: str) -> dict[str, Any]:
         normalized = str(text or "").strip()
