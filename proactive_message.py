@@ -185,6 +185,7 @@ from .helpers import (
     _split_address_terms,
     _strip_internal_message_blocks,
     _strip_outbound_control_blocks,
+    _strip_terminal_sentence_period,
     _today_key,
     normalize_bot_relationship_cards,
 )
@@ -19002,7 +19003,9 @@ class ProactiveMessageMixin(FinalResponsePersistenceMixin):
             lines.append(line)
         if not lines:
             return ""
-        return self._truncate_proactive_text("\n".join(lines[:3]), 260)
+        return _strip_terminal_sentence_period(
+            self._truncate_proactive_text("\n".join(lines[:3]), 260)
+        )
 
     def _strip_parenthetical_stage_directions(self, text: str) -> str:
         cleaned = str(text or "").strip()

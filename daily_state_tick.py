@@ -15,6 +15,7 @@ from .helpers import (
     _safe_float,
     _safe_int,
     _single_line,
+    _strip_terminal_sentence_period,
     _today_key,
     _record_unanswered_proactive,
     _unanswered_proactive_count,
@@ -1114,6 +1115,7 @@ class DailyStateTickMixin:
                     _single_line(cleaned_text, 120),
                 )
                 text = cleaned_text
+        text = _strip_terminal_sentence_period(text)
         if not is_troubleshooting_for_send and reason == "activity_share":
             async with self._data_lock:
                 current_for_dedupe = self._get_user(user_id)
