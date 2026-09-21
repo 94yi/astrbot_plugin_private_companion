@@ -14,6 +14,15 @@ from typing import Any
 
 
 
+
+
+# ---- 宿主 patch 兼容层（由 tools/inject_host_patch_shim.py 注入）----
+# PyTest 里 patch("...daily_state._today_key") 期望改动能被本模块感知。
+# 原 import 会被下面的同名函数覆盖，方法体调用时实时转发到宿主模块。
+def _now_ts(*args, **kwargs):
+    from . import daily_state as _host
+    return getattr(_host, "_now_ts")(*args, **kwargs)
+
 class DailyStateSleepMixin:
     """sleep 域（从 DailyStateMixin 拆出）。"""
 
