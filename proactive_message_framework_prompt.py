@@ -75,6 +75,21 @@ def _now_ts(*args, **kwargs):
     return getattr(_host, "_now_ts")(*args, **kwargs)
 # ---- 宿主全局转发层结束 ----
 
+# ---- 宿主全局取值助手（由 tmp/refactor/autofix_domain_globals.py 生成）----
+def _host_build_main_agent():
+    """按宿主当前的 ``build_main_agent`` 取值，保住 ``patch("<宿主>.build_main_agent")`` 的能力。
+
+    本模块那份 import 是**真实对象**，测试 patch 宿主模块属性时触达不到它，
+    导致绕过替身直接调用真实实现。所有调用点改走本函数即可恢复可替换性。
+    """
+    from . import proactive_message as _host
+
+    candidate = getattr(_host, "build_main_agent", None)
+    if candidate is None or candidate is build_main_agent:
+        return build_main_agent
+    return candidate
+# ---- 宿主全局取值助手结束 ----
+
 class SyntheticPrivateWakeEvent(AstrMessageEvent):
     def __init__(
         self,
@@ -1831,7 +1846,7 @@ class ProactiveMessageFrameworkPromptMixin:
                     req.conversation = self._proactive_conversation_with_configured_persona(conv)
 
                     async def _runner_factory():
-                        build_result = await build_main_agent(
+                        build_result = await _host_build_main_agent()(
                             event=event,
                             # AstrBot 4.26.2+ validates this as the concrete Context type.
                             plugin_context=framework_context,
