@@ -23,6 +23,7 @@ from scoped_runtime_view import (
 ROOT = Path(__file__).resolve().parents[1]
 
 from tests.module_source_index import class_matches_host as _class_matches
+from tests.module_source_index import proactive_message_source_text
 
 
 def _approved_rule(rule_id: str, evidence_count: int = 1, *, kind: str = "private") -> dict:
@@ -345,7 +346,8 @@ class BackgroundSnapshotTests(unittest.TestCase):
 class ConsumerWiringTests(unittest.TestCase):
     def test_passive_and_proactive_consumers_are_wired_to_scoped_snapshots(self) -> None:
         passive = (ROOT / "passive_state_pipeline.py").read_text(encoding="utf-8")
-        proactive = (ROOT / "proactive_message.py").read_text(encoding="utf-8")
+        # 重构后 proactive_message 的方法分散在宿主 + 各域模块，需联合扫描。
+        proactive = proactive_message_source_text(ROOT)
         self.assertLess(
             passive.index("private_user = scoped_getter(event, private_user)"),
             passive.index("preferred_address = _single_line("),

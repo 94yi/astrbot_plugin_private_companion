@@ -28,6 +28,13 @@ def _now_ts(*args, **kwargs):
     from . import proactive_message as _host
     return getattr(_host, "_now_ts")(*args, **kwargs)
 
+# ---- 宿主全局转发层（由 tmp/refactor/autofix_domain_globals.py 生成）----
+# ==== 需实时转发（可被 patch）：同名函数转发宿主 ====
+def _now_ts(*args, **kwargs):
+    from . import proactive_message as _host
+    return getattr(_host, "_now_ts")(*args, **kwargs)
+# ---- 宿主全局转发层结束 ----
+
 class ProactiveMessageChatBridgeMixin:
     """chat_bridge 域（从 ProactiveMessageMixin 拆出）。"""
 

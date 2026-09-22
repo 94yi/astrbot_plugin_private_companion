@@ -174,8 +174,8 @@ _PROMPT_AUTHORING_ALLOWLIST: tuple[dict[str, object], ...] = (
     ),
     _prompt_allow(
         _PROMPT_RULE_LEGACY_HEADING,
-        "daily_state.py",
-        "DailyStateMixin._daily_proactive_archive_context_text",
+        "daily_state_proactive.py",
+        "DailyStateProactiveMixin._daily_proactive_archive_context_text",
         ("【主动消息】",),
         "recognizes legacy persisted proactive archive rows",
         "legacy archive rows have expired or migrated",
@@ -286,8 +286,8 @@ _PROMPT_AUTHORING_ALLOWLIST: tuple[dict[str, object], ...] = (
     ),
     _prompt_allow(
         _PROMPT_RULE_LEGACY_HEADING,
-        "proactive_message.py",
-        "ProactiveMessageMixin._remove_unbacked_media_claims",
+        "proactive_message_generation.py",
+        "ProactiveMessageGenerationMixin._remove_unbacked_media_claims",
         ("【图片】",),
         "sanitizes legacy image placeholders from generated text",
         "legacy media placeholders are retired",
@@ -302,8 +302,8 @@ _PROMPT_AUTHORING_ALLOWLIST: tuple[dict[str, object], ...] = (
     ),
     _prompt_allow(
         _PROMPT_RULE_LEGACY_HEADING,
-        "proactive_message.py",
-        "ProactiveMessageMixin._sanitize_proactive_text",
+        "proactive_message_text_finalize.py",
+        "ProactiveMessageTextFinalizeMixin._sanitize_proactive_text",
         ("【图片】",),
         "sanitizes a legacy media placeholder from generated text",
         "legacy media placeholders are retired",

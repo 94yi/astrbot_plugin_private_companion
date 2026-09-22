@@ -295,16 +295,31 @@ def test_reading_archive_does_not_shadow_self_timeline() -> None:
     )
 
 
+def _find_host_method(path: Path, class_name: str, method_name: str):
+    """在宿主单文件里找方法；找不到就扫同族域模块（宿主被拆成 mixin 后）。
+
+    proactive_message.py 已按域拆分，方法体可能落在 proactive_message_*.py。
+    """
+    import sys
+
+    sys.path.insert(0, str(ROOT / "tests"))
+    from module_source_index import find_method
+
+    host = path.stem
+    node = find_method(ROOT, host, class_name, method_name)
+    if node is None:
+        raise StopIteration(f"{method_name} 未在 {path.name} 及其域模块中找到")
+    return node
+
+
 def test_retained_photo_reference_facade_forwards_identity_context() -> None:
-    owner = _top_level_class(ROOT / "proactive_message.py", "ProactiveMessageMixin")
-    definitions = [
-        node
-        for node in owner.body
-        if isinstance(node, ast.AsyncFunctionDef)
-        and node.name == "_photo_persona_reference_image_for_kind_async"
-    ]
-    assert len(definitions) == 1
-    method = copy.deepcopy(definitions[0])
+    method = _find_host_method(
+        ROOT / "proactive_message.py",
+        "ProactiveMessageMixin",
+        "_photo_persona_reference_image_for_kind_async",
+    )
+    assert isinstance(method, ast.AsyncFunctionDef)
+    method = copy.deepcopy(method)
     method.decorator_list = []
     keyword_names = {argument.arg for argument in method.args.kwonlyargs}
     assert {"requester_user_id", "continuity_key"} <= keyword_names

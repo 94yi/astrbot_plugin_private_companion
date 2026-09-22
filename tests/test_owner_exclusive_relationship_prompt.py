@@ -19,6 +19,8 @@ from astrbot_plugin_private_companion.conversation_prompt_section import (
 
 ROOT = Path(__file__).resolve().parents[1]
 
+from tests.module_source_index import proactive_message_source_text  # noqa: E402
+
 
 def _single_line(value: Any, limit: int = 80) -> str:
     return " ".join(str(value or "").split())[:limit]
@@ -224,7 +226,8 @@ class OwnerExclusiveRelationshipPromptTests(unittest.TestCase):
 
     def test_passive_and_proactive_paths_share_the_same_formatter(self) -> None:
         main_source = (ROOT / "main.py").read_text(encoding="utf-8")
-        proactive_source = (ROOT / "proactive_message.py").read_text(encoding="utf-8")
+        # 重构后 proactive_message 的方法分散在宿主 + 各域模块，需联合扫描。
+        proactive_source = proactive_message_source_text(ROOT)
         self.assertIn('"relationship.owner_exclusive"', main_source)
         self.assertIn("_format_owner_exclusive_relationship_prompt", main_source)
         self.assertIn("_format_owner_exclusive_relationship_prompt", proactive_source)

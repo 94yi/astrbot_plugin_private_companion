@@ -41,6 +41,8 @@ from astrbot_plugin_private_companion.runtime_config_dispatcher import TTS_RUNTI
 
 ROOT = Path(__file__).resolve().parents[1]
 
+from tests.module_source_index import find_method, proactive_message_source_text  # noqa: E402
+
 
 class _Logger:
     def _noop(self, *_args: Any, **_kwargs: Any) -> None:
@@ -1409,7 +1411,12 @@ def test_non_adult_output_guard_and_shared_consumers_are_wired() -> None:
     assert "_private_companion_expression_decision" in ast.unparse(hook)
 
     for filename in ("proactive.py", "proactive_message.py"):
-        source = (ROOT / filename).read_text(encoding="utf-8")
+        # 重构后 proactive_message 的正文可能落在域模块中，跨模块联合检查。
+        source = (
+            proactive_message_source_text(ROOT)
+            if filename == "proactive_message.py"
+            else (ROOT / filename).read_text(encoding="utf-8")
+        )
         assert "_build_expression_decision_for_user" in source, filename
         assert '"requested_content_tier": "normal"' in source, filename
     tts_source = (ROOT / "tts_enhancement.py").read_text(encoding="utf-8")
@@ -1420,6 +1427,11 @@ def test_non_adult_output_guard_and_shared_consumers_are_wired() -> None:
 
 def test_legacy_relationship_state_has_no_parallel_expression_consumers() -> None:
     def method_source(filename: str, class_name: str, method_name: str) -> str:
+        # 重构后 proactive_message 的方法已拆到域模块，改用跨模块定位。
+        if filename == "proactive_message.py":
+            node = find_method(ROOT, "proactive_message", class_name, method_name)
+            assert node is not None, f"{class_name}.{method_name} 未找到"
+            return ast.unparse(node)
         tree = ast.parse((ROOT / filename).read_text(encoding="utf-8"))
         owner = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == class_name)
         method = next(

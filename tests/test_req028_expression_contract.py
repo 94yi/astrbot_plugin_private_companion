@@ -21,6 +21,7 @@ from companion_interaction_expression import (  # noqa: E402
     expression_decision_prompt,
     resolve_expression_decision,
 )
+from tests.module_source_index import find_method  # noqa: E402
 
 
 class Req028ExpressionContractTests(unittest.TestCase):
@@ -312,10 +313,14 @@ class Req028ExpressionContractTests(unittest.TestCase):
         self.assertEqual("backoff", gate(host, {"contact_preference": {"no_contact": True}}))
 
     def test_proactive_chat_bridge_preflight_consumes_expression_budget_and_boundary(self) -> None:
-        source = (ROOT / "proactive_message.py").read_text(encoding="utf-8")
-        tree = ast.parse(source)
-        owner = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "ProactiveMessageMixin")
-        method = next(node for node in owner.body if isinstance(node, ast.FunctionDef) and node.name == "_proactive_chat_bridge_preflight_block_reason")
+        # 重构后该方法位于 proactive_message 的某个域模块中，需跨模块联合定位。
+        method = find_method(
+            ROOT,
+            "proactive_message",
+            "ProactiveMessageMixin",
+            "_proactive_chat_bridge_preflight_block_reason",
+        )
+        self.assertIsNotNone(method, "_proactive_chat_bridge_preflight_block_reason 未在任何 proactive_message 域模块中找到")
         constants = {node.value for node in ast.walk(method) if isinstance(node, ast.Constant) and isinstance(node.value, str)}
         self.assertIn("_build_expression_decision_for_user", constants)
         self.assertIn("expression_proactive_budget_exhausted", constants)
