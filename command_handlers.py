@@ -3116,6 +3116,29 @@ class CommandHandlersMixin:
             "token_budget.py",
         )
 
+    # 巨型宿主按域拆分出的模块（<宿主>_*.py）。历史上主机名是**硬编码清单**，
+    # 拆分后新增的域模块不在清单里 → 专家答疑检索不到对应实现，问题会被误判为
+    # 「源码里没有这个功能」。这里按前缀动态展开，避免每次拆域都要回来补名字。
+    _COMPANION_MANUAL_DERIVED_MODULE_PREFIXES: tuple[str, ...] = (
+        "proactive_message_",
+        "daily_state_",
+        "proactive_engine_",
+    )
+
+    @classmethod
+    def _companion_manual_resolve_source_files(cls) -> tuple[str, ...]:
+        names: list[str] = list(cls._companion_manual_source_file_names())
+        seen = set(names)
+        root = Path(__file__).resolve().parent
+        for prefix in cls._COMPANION_MANUAL_DERIVED_MODULE_PREFIXES:
+            for path in sorted(root.glob(f"{prefix}*.py")):
+                name = path.name
+                if name in seen:
+                    continue
+                seen.add(name)
+                names.append(name)
+        return tuple(names)
+
     def _companion_manual_source_context(
         self,
         question: str,
@@ -3151,7 +3174,7 @@ class CommandHandlersMixin:
 
         root = Path(__file__).resolve().parent
         candidates: list[tuple[int, str, int, list[str]]] = []
-        for file_name in self._companion_manual_source_file_names():
+        for file_name in self._companion_manual_resolve_source_files():
             path = root / file_name
             try:
                 lines = path.read_text(encoding="utf-8").splitlines()

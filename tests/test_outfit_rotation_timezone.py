@@ -15,6 +15,8 @@ import ast
 import unittest
 from pathlib import Path
 
+from tests.module_source_index import find_method
+
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGET_FILE = "proactive_message.py"
@@ -22,18 +24,16 @@ TARGET_METHOD = "_daily_outfit_rotation_history"
 
 
 def _method(filename: str, name: str) -> ast.FunctionDef | ast.AsyncFunctionDef:
-    tree = ast.parse(
-        (ROOT / filename).read_text(encoding="utf-8"), filename=filename
-    )
-    for node in ast.walk(tree):
-        if isinstance(node, ast.ClassDef):
-            for child in node.body:
-                if (
-                    isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef))
-                    and child.name == name
-                ):
-                    return child
-    raise AssertionError(f"未找到方法 {name}()，测试前提失效")
+    """跨模块定位方法节点。
+
+    ``{name}`` 已随域拆分迁出 ``{filename}``，改由 ``find_method`` 聚合扫描
+    宿主与全部域模块，断言语义不变（仍对同一个方法体做 AST 断言）。
+    """
+    host = filename[:-3] if filename.endswith(".py") else filename
+    node = find_method(ROOT, host, "ProactiveMessageMixin", name)
+    if node is None:
+        raise AssertionError(f"未找到方法 {name}()，测试前提失效")
+    return node
 
 
 def _call_names(node: ast.AST) -> set[str]:
