@@ -60,7 +60,7 @@ def _literal_sections(call: ast.Call) -> set[str] | None:
 
 
 def _single_literal_save_sections(path: Path, function_name: str) -> set[str]:
-    calls = _direct_save_calls(_function(path, function_name))
+    calls = _direct_save_calls(_function_anywhere(function_name))
     literal = [sections for call in calls if (sections := _literal_sections(call)) is not None]
     if len(literal) != 1:
         raise AssertionError(
@@ -148,7 +148,7 @@ class PageApiIncrementalPersistenceTests(unittest.TestCase):
                 )
 
     def test_dynamic_user_update_tracks_secondary_sections(self) -> None:
-        source = ast.unparse(_function(USERS_GROUPS_API, "update_user"))
+        source = ast.unparse(_function_anywhere("update_user"))
 
         self.assertIn("save_sections = {'users'}", source)
         self.assertIn("save_sections.add('expression_voice_profile')", source)
