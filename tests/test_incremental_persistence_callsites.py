@@ -16,6 +16,7 @@ from astrbot_plugin_private_companion.core_store import (
 )
 from astrbot_plugin_private_companion.event_dispatch import EventDispatchMixin
 from astrbot_plugin_private_companion.story_handoff import STORY_MIGRATION_COMMIT_KEY
+from module_source_index import iter_class_methods
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -380,10 +381,8 @@ class IncrementalPersistenceCallsiteTests(unittest.TestCase):
         )
 
     def test_message_hooks_share_event_batch_inside_persona_context(self) -> None:
-        tree = ast.parse(
-            (ROOT / "main.py").read_text(encoding="utf-8"),
-            filename="main.py",
-        )
+        # 方法经拆分后分布在 main.py 与 main_*.py 域 mixin 中，
+        # 需跨宿主族聚合定位（module_source_index 风格），断言语义不变。
         expected = {
             "guard_req036_private_capability_early": False,
             "on_private_message": True,
@@ -394,10 +393,9 @@ class IncrementalPersistenceCallsiteTests(unittest.TestCase):
             "on_group_message": True,
         }
         functions = {
-            node.name: node
-            for node in ast.walk(tree)
-            if isinstance(node, ast.AsyncFunctionDef)
-            and node.name in expected
+            child.name: child
+            for child, _owner in iter_class_methods(ROOT, "main", "PrivateCompanionPlugin")
+            if child.name in expected
         }
         self.assertEqual(set(expected), set(functions))
         for name, flush in expected.items():
