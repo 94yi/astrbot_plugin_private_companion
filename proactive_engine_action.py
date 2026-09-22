@@ -5,6 +5,7 @@
 方法体零改动：所有 self.xxx 依赖通过继承链解析（宿主类 ProactiveEngineMixin）。
 """
 from __future__ import annotations
+from .proactive_engine_shared import _engine_host
 
 import random
 import re
@@ -231,7 +232,7 @@ class ProactiveEngineActionMixin:
             current_item_text,
             user=user,
         )
-        if self._photo_text_available(user) and photo_probability > 0 and random.random() < photo_probability:
+        if self._photo_text_available(user) and photo_probability > 0 and _engine_host.random.random() < photo_probability:
             return "photo_text"
         visual_hint = any(token in motive for token in self._visual_share_tokens())
         if self._photo_text_available(user) and (
@@ -298,7 +299,7 @@ class ProactiveEngineActionMixin:
         total = sum(weight for _, weight in filtered)
         if total <= 0:
             return filtered[0][0]
-        point = random.random() * total
+        point = _engine_host.random.random() * total
         upto = 0.0
         for name, weight in filtered:
             upto += weight

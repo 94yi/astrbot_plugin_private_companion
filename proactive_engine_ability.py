@@ -14,6 +14,7 @@ from copy import deepcopy
 from typing import Any
 
 from .logging_util import get_module_logger
+from .proactive_engine_shared import _engine_host
 
 logger = get_module_logger(__name__)
 
@@ -87,7 +88,7 @@ class ProactiveEngineAbilityMixin:
                 "config": merged_config,
                 "config_schema": deepcopy(config_schema),
                 "registered": True,
-                "updated_ts": _now_ts(),
+                "updated_ts": _engine_host._now_ts(),
             })
             store[name] = item
             self._save_data_sync(sections={"external_proactive_abilities"})
@@ -104,7 +105,7 @@ class ProactiveEngineAbilityMixin:
             item = store.get(normalized)
             if isinstance(item, dict):
                 item["registered"] = False
-                item["updated_ts"] = _now_ts()
+                item["updated_ts"] = _engine_host._now_ts()
                 self._save_data_sync(sections={"external_proactive_abilities"})
         except Exception:
             pass
@@ -149,7 +150,7 @@ class ProactiveEngineAbilityMixin:
         return bool(item.get("enabled") and item.get("available"))
 
     def _available_external_proactive_abilities(self, user: dict[str, Any] | None = None) -> list[dict[str, Any]]:
-        now = _now_ts()
+        now = _engine_host._now_ts()
         items: list[dict[str, Any]] = []
         has_user_context = bool(
             isinstance(user, dict)

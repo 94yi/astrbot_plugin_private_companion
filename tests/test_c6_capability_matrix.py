@@ -238,15 +238,21 @@ class C6CapabilityMatrixTests(unittest.TestCase):
         self.assertTrue({"私聊陪伴", "主动陪伴"} <= mappings["陪伴"])
         self.assertTrue({"群陪伴", "群聊陪伴"} <= mappings["陪伴群"])
 
-        tree = _parse(ROOT / "proactive_engine.py")
+        # mixin 拆分后，方法分布在宿主 + 各域模块，改为家族扫描
+        family_sources = [
+            path.read_text(encoding="utf-8")
+            for path in sorted(ROOT.glob("proactive_engine*.py"))
+        ]
+        family_trees = [ast.parse(source) for source in family_sources]
         reason_window_methods = {
             node.name
+            for tree in family_trees
             for node in ast.walk(tree)
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == "_reason_windows"
         }
         self.assertEqual(reason_window_methods, {"_reason_windows"})
-        source = (ROOT / "proactive_engine.py").read_text(encoding="utf-8")
-        self.assertGreaterEqual(source.count("_reason_windows("), 4)
+        family_source = "".join(family_sources)
+        self.assertGreaterEqual(family_source.count("_reason_windows("), 4)
 
     def test_c6_domain_entrypoints_are_still_reachable(self) -> None:
         source = _source(

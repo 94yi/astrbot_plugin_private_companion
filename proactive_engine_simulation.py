@@ -5,6 +5,7 @@
 方法体零改动：所有 self.xxx 依赖通过继承链解析（宿主类 ProactiveEngineMixin）。
 """
 from __future__ import annotations
+from .proactive_engine_shared import _engine_host
 
 import random
 from .constants import _SIMULATION_FALLBACK_EVENTS
@@ -32,7 +33,7 @@ class ProactiveEngineSimulationMixin:
         sim = user.get("simulation_mode")
         if not isinstance(sim, dict) or not sim.get("active"):
             return False, "未处于模拟模式"
-        now = _now_ts()
+        now = _engine_host._now_ts()
         self._sync_simulation_next_event(user, now=now)
         next_at = _safe_float(user.get("next_proactive_at"), 0)
         label = self._simulation_label(user)
@@ -51,7 +52,7 @@ class ProactiveEngineSimulationMixin:
         if not isinstance(events, list) or not events:
             self._finish_simulation_mode(user)
             return
-        now = now or _now_ts()
+        now = now or _engine_host._now_ts()
         remaining = [event for event in events if isinstance(event, dict)]
         if not remaining:
             self._finish_simulation_mode(user)
@@ -306,7 +307,7 @@ class ProactiveEngineSimulationMixin:
                 else 24 * 60
             )
         )
-        start_ts = _now_ts() + 20
+        start_ts = _engine_host._now_ts() + 20
         events: list[dict[str, Any]] = []
         for index, item in enumerate(filtered):
             cloned = dict(item)
@@ -351,7 +352,7 @@ class ProactiveEngineSimulationMixin:
             "tone": "轻轻使坏",
             "impulse": "先戳一下，再看看你会不会回头",
             "chain": [],
-            "_scheduled_ts": _now_ts() + 3,
+            "_scheduled_ts": _engine_host._now_ts() + 3,
             "_simulated_window": window or "立即触发",
         }
 
@@ -418,7 +419,7 @@ class ProactiveEngineSimulationMixin:
         selected = [dict(item) for item in selected]
         for item in selected:
             item["motive"] = self._normalize_event_motive(item)
-        start_ts = _now_ts() + 30
+        start_ts = _engine_host._now_ts() + 30
         total = len(selected)
         if total == 1:
             schedule_points = [start_ts + 120]
@@ -428,7 +429,7 @@ class ProactiveEngineSimulationMixin:
             for index in range(total):
                 ratio = index / max(1, total - 1)
                 base = start_ts + (last_ts - start_ts) * ratio
-                jitter = random.uniform(-70, 95)
+                jitter = _engine_host.random.uniform(-70, 95)
                 schedule_points.append(max(start_ts + index * 70, base + jitter))
             schedule_points.sort()
         events: list[dict[str, Any]] = []

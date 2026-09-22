@@ -5,6 +5,7 @@
 方法体零改动：所有 self.xxx 依赖通过继承链解析（宿主类 ProactiveEngineMixin）。
 """
 from __future__ import annotations
+from .proactive_engine_shared import _engine_host
 
 from .helpers import _now_ts, _safe_float, _single_line
 from .persona_config import runtime_persona_setting
@@ -28,14 +29,14 @@ class ProactiveEngineTimerMixin:
         if not isinstance(event, dict):
             return 0.0
         scheduled_ts = _safe_float(event.get("scheduled_ts"), 0)
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         return scheduled_ts if scheduled_ts > check_now else 0.0
 
     def _in_llm_timer_pre_silence_window(self, user: dict[str, Any], *, now: float | None = None) -> bool:
         lead = self._llm_timer_pre_silence_seconds()
         if lead <= 0:
             return False
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         timer_ts = self._upcoming_llm_timer_ts(user, now=check_now)
         return timer_ts > 0 and 0 < timer_ts - check_now <= lead
 
@@ -43,7 +44,7 @@ class ProactiveEngineTimerMixin:
         event = self._get_active_llm_timer(user)
         if not isinstance(event, dict):
             return False
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         scheduled_ts = _safe_float(event.get("scheduled_ts"), 0)
         if scheduled_ts <= check_now:
             return False
@@ -68,7 +69,7 @@ class ProactiveEngineTimerMixin:
         if isinstance(existing, dict) and existing:
             return
         event["deferred_context"] = {
-            "created_at": now or _now_ts(),
+            "created_at": now or _engine_host._now_ts(),
             "reason": reason,
             "action": action,
             "topic": topic,
@@ -96,7 +97,7 @@ class ProactiveEngineTimerMixin:
         if not any((topic, motive, reason)):
             return
         event["deferred_context"] = {
-            "created_at": now or _now_ts(),
+            "created_at": now or _engine_host._now_ts(),
             "reason": reason,
             "action": action,
             "topic": topic,
@@ -110,7 +111,7 @@ class ProactiveEngineTimerMixin:
             return False
         if not self._llm_timer_can_use_internal_scheduler(event):
             return False
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         scheduled_ts = _safe_float(event.get("scheduled_ts"), 0)
         if scheduled_ts <= 0 or scheduled_ts > check_now:
             return False
@@ -174,7 +175,7 @@ class ProactiveEngineTimerMixin:
             return False
         if not self._llm_timer_can_use_internal_scheduler(event):
             return False
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         scheduled_ts = _safe_float(event.get("scheduled_ts"), 0)
         if scheduled_ts <= check_now:
             return False

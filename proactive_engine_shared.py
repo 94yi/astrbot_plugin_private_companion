@@ -53,3 +53,13 @@ def _persona_provider_id(owner: Any, canonical_key: str, legacy_attr: str, quick
     fast_id = str(runtime_persona_setting(owner, "FAST_RESPONSE_PROVIDER_ID", "") or "").strip()
     return fast_id or complex_id or fallback
 
+
+
+class _EngineHostRef:
+    """延迟引用宿主 proactive_engine 模块，保证 monkey-patch 宿主全局名对全部域生效。"""
+    def __getattr__(self, name):
+        from . import proactive_engine as _host_module
+        return getattr(_host_module, name)
+
+
+_engine_host = _EngineHostRef()

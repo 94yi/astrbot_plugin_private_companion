@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from .logging_util import get_module_logger
+from .proactive_engine_shared import _engine_host
 
 logger = get_module_logger(__name__)
 
@@ -123,7 +124,7 @@ class ProactiveEngineEventMixin:
     ) -> bool:
         if not isinstance(user, dict) or not self._user_asks_bot_current_state_or_activity(text):
             return False
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         note = "用户已询问当前状态，状态分享念头已由被动回复承接"
         changed = False
         planned_item = {
@@ -208,7 +209,7 @@ class ProactiveEngineEventMixin:
         scene_getter = getattr(self, "_mobile_user_proactive_scene", None)
         if not callable(scene_getter):
             return None
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         budget_available = getattr(self, "_mobile_location_humanization_budget_available", None)
         if callable(budget_available) and not budget_available(user, now=check_now):
             return None
@@ -263,7 +264,7 @@ class ProactiveEngineEventMixin:
         priority_key = _single_line(user.get("mobile_location_priority_key"), 80)
         priority_until = _safe_float(user.get("mobile_location_priority_until"), 0)
         is_priority_arrival = priority_key and priority_key == transition_key and priority_until > check_now
-        delay_seconds = random.uniform(5, 20) if is_priority_arrival else random.uniform(45, 240)
+        delay_seconds = _engine_host.random.uniform(5, 20) if is_priority_arrival else _engine_host.random.uniform(45, 240)
         battery = scene.get("battery_percent")
         low_battery = isinstance(battery, int) and battery <= 15 and not bool(scene.get("charging"))
         tone = "轻一点，短一点，不邀请长通话" if low_battery else "轻一点"
@@ -292,7 +293,7 @@ class ProactiveEngineEventMixin:
         now: float | None = None,
     ) -> dict[str, Any] | None:
         """Turn a strong, recent game afterglow into one optional rematch invite."""
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         if _safe_int(user.get("ignored_streak"), 0, 0) > 0:
             return None
         state_getter = getattr(self, "_game_afterglow_for_user", None)
@@ -323,10 +324,10 @@ class ProactiveEngineEventMixin:
             return None
         user["game_invite_checked_key"] = invite_key
         invite_probability = min(0.78, 0.28 + max(0, interest - 70) / 100)
-        if random.random() > invite_probability:
+        if _engine_host.random.random() > invite_probability:
             return None
         scheduled = self._move_timestamp_into_reason_window(
-            check_now + random.randint(30, 120) * 60,
+            check_now + _engine_host.random.randint(30, 120) * 60,
             "game_invite",
             user,
         )
@@ -358,7 +359,7 @@ class ProactiveEngineEventMixin:
         *,
         now: float | None = None,
     ) -> dict[str, Any] | None:
-        now = now or _now_ts()
+        now = now or _engine_host._now_ts()
         state = self.data.get("daily_state", {})
         if not isinstance(state, dict) or state.get("date") != _today_key():
             return None
@@ -388,14 +389,14 @@ class ProactiveEngineEventMixin:
             min(1.0, runtime_persona_setting(self, "humanized_state_intensity", 50) / 100),
         )
         chance = 0.18 + 0.32 * intensity
-        if random.random() > chance:
+        if _engine_host.random.random() > chance:
             return None
-        delay_minutes = random.randint(4, 12) if now - started >= 55 * 60 else random.randint(12, 32)
+        delay_minutes = _engine_host.random.randint(4, 12) if now - started >= 55 * 60 else _engine_host.random.randint(12, 32)
         scheduled = now + delay_minutes * 60
         phase = _single_line(active_hunger.get("phase"), 24)
         topic = "吃点什么"
         if phase == "afternoon":
-            topic = random.choice(["下午想吃点甜的", "下午想吃点咸的", "下午想吃点热的", "下午想吃点凉的"])
+            topic = _engine_host.random.choice(["下午想吃点甜的", "下午想吃点咸的", "下午想吃点热的", "下午想吃点凉的"])
         elif phase == "late_snack":
             topic = "夜里要不要吃点东西"
         elif phase in {"lunch", "dinner"}:
@@ -435,7 +436,7 @@ class ProactiveEngineEventMixin:
             return None
         if self._private_user_role(user) == "friend":
             return None
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         if _safe_float(user.get("awaiting_reply_since"), 0) > 0:
             return None
         loops = user.get("open_loops")
@@ -466,7 +467,7 @@ class ProactiveEngineEventMixin:
         scheduled = (
             sampler(user, now=check_now, delay_hours=(0.25, 2.0), reason="open_loop_followup")
             if callable(sampler)
-            else check_now + random.uniform(15 * 60, 2 * 3600)
+            else check_now + _engine_host.random.uniform(15 * 60, 2 * 3600)
         )
         selected["proactive_candidate_at"] = check_now
         anonymous_pending = user.get("mobile_anonymous_area_pending")
@@ -505,7 +506,7 @@ class ProactiveEngineEventMixin:
     def _pick_pending_followup_event(
         self, user: dict[str, Any], now: float | None = None
     ) -> dict[str, Any] | None:
-        now = now or _now_ts()
+        now = now or _engine_host._now_ts()
         if self._private_user_role(user) == "friend":
             return None
         if self._in_llm_timer_silence_window(user, now=now):
@@ -567,7 +568,7 @@ class ProactiveEngineEventMixin:
         due_at = _safe_float(raw.get("complaint_after_ts"), 0)
         if due_at <= 0:
             return None
-        now = now or _now_ts()
+        now = now or _engine_host._now_ts()
         if now < due_at:
             return None
         name = _single_line(
@@ -615,7 +616,7 @@ class ProactiveEngineEventMixin:
             remaining.append(step)
         if not isinstance(current, dict):
             return None
-        now_ts = now_ts or _now_ts()
+        now_ts = now_ts or _engine_host._now_ts()
         after_minutes = _safe_int(current.get("after_minutes"), 18, 0, 240)
         origin_reason = self._normalize_legacy_proactive_text(origin_reason, limit=40)
         follow_reason = self._normalize_legacy_proactive_text(current.get("reason"), limit=40) or origin_reason or "check_in"
@@ -659,7 +660,7 @@ class ProactiveEngineEventMixin:
         if not isinstance(suppressed, list):
             suppressed = []
             user["greetings_suppressed_by_inbound"] = suppressed
-        now_dt = self._environment_fromtimestamp(now or _now_ts())
+        now_dt = self._environment_fromtimestamp(now or _engine_host._now_ts())
         minute = now_dt.hour * 60 + now_dt.minute
         morning_start, morning_end = self._morning_greeting_window()
         anchors = [
@@ -700,15 +701,15 @@ class ProactiveEngineEventMixin:
                     end_dt.timestamp(),
                     (earliest + timedelta(minutes=18)).timestamp(),
                 )
-                scheduled = random.uniform(
+                scheduled = _engine_host.random.uniform(
                     earliest.timestamp(),
                     max(earliest.timestamp() + 60, early_window_end),
                 )
             elif reason == "evening_greeting":
                 tighten_end = min(end_dt.timestamp(), (earliest + timedelta(minutes=48)).timestamp())
-                scheduled = random.uniform(earliest.timestamp(), max(earliest.timestamp() + 60, tighten_end))
+                scheduled = _engine_host.random.uniform(earliest.timestamp(), max(earliest.timestamp() + 60, tighten_end))
             else:
-                scheduled = random.uniform(earliest.timestamp(), end_dt.timestamp())
+                scheduled = _engine_host.random.uniform(earliest.timestamp(), end_dt.timestamp())
             if self._friend_proactive_scheduled_too_early(user, scheduled):
                 continue
             candidates.append(
@@ -737,7 +738,7 @@ class ProactiveEngineEventMixin:
         *,
         now: float | None = None,
     ) -> dict[str, Any] | None:
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         if not self._can_send_insomnia_night_message(user, now=check_now):
             return None
         night_key = self._insomnia_night_key(check_now)
@@ -759,7 +760,7 @@ class ProactiveEngineEventMixin:
             return None
         max_delay = max(20, min(22 * 60, remaining_seconds - 10))
         min_delay = min(4 * 60, max_delay)
-        scheduled = check_now + random.randint(min_delay, max_delay)
+        scheduled = check_now + _engine_host.random.randint(min_delay, max_delay)
         return {
             "window": "23:00-24:00" if current.hour >= 23 else "00:00-06:00",
             "reason": "insomnia_night",
@@ -782,7 +783,7 @@ class ProactiveEngineEventMixin:
     ) -> dict[str, Any] | None:
         if self._private_user_role(user) != "owner" or bool(user.get("special_day_greeting_opt_out")):
             return None
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         current = self._environment_fromtimestamp(check_now)
         # A user's birthday owns the midnight ritual when it overlaps a
         # calendar holiday; avoid sending two competing greetings in one slot.
@@ -807,19 +808,19 @@ class ProactiveEngineEventMixin:
                 midnight_end = current.replace(hour=0, minute=15, second=0, microsecond=0).timestamp()
                 remaining = int(midnight_end - check_now)
                 if remaining > 10:
-                    scheduled = check_now + random.randint(5, min(120, remaining - 5))
+                    scheduled = check_now + _engine_host.random.randint(5, min(120, remaining - 5))
                     midnight = True
                 else:
-                    scheduled = current.replace(hour=8, minute=30, second=0, microsecond=0).timestamp() + random.randint(0, 35) * 60
+                    scheduled = current.replace(hour=8, minute=30, second=0, microsecond=0).timestamp() + _engine_host.random.randint(0, 35) * 60
                     midnight = False
             elif current.hour < 21:
-                scheduled = check_now + random.randint(8, 28) * 60
+                scheduled = check_now + _engine_host.random.randint(8, 28) * 60
                 midnight = False
             else:
                 return None
             date_text = current.date().isoformat()
         else:
-            scheduled = datetime.combine(tomorrow.date(), datetime.min.time(), tzinfo=current.tzinfo).timestamp() + random.randint(1, 7) * 60
+            scheduled = datetime.combine(tomorrow.date(), datetime.min.time(), tzinfo=current.tzinfo).timestamp() + _engine_host.random.randint(1, 7) * 60
             midnight = True
             date_text = tomorrow.date().isoformat()
         return {
@@ -855,7 +856,7 @@ class ProactiveEngineEventMixin:
         events = plan.get("proactive_events", [])
         if not isinstance(events, list):
             return None
-        now = now or _now_ts()
+        now = now or _engine_host._now_ts()
         future_events = []
         for event in events:
             if not isinstance(event, dict):
@@ -989,7 +990,7 @@ class ProactiveEngineEventMixin:
 
     def _note_proactive_daypart_sent(self, user: dict[str, Any], sent_at: float | None = None) -> None:
         self._reset_daily_counter_if_needed(user)
-        when = self._environment_fromtimestamp(sent_at or _now_ts())
+        when = self._environment_fromtimestamp(sent_at or _engine_host._now_ts())
         bucket = self._proactive_daypart_bucket_for_minute(when.hour * 60 + when.minute)
         raw = user.setdefault("proactive_daypart_counts", {})
         if not isinstance(raw, dict):
@@ -1013,9 +1014,9 @@ class ProactiveEngineEventMixin:
             chance += 0.05
         if "poke" in action:
             chance += 0.03
-        if random.random() > chance:
+        if _engine_host.random.random() > chance:
             return None
-        delay_minutes = random.randint(22, 95)
+        delay_minutes = _engine_host.random.randint(22, 95)
         follow_reason = "check_in" if action in {"poke", "screen_peek"} else "diary_share"
         topic = {
             "photo_text": "对发送的图片进行补充说明",
@@ -1046,7 +1047,7 @@ class ProactiveEngineEventMixin:
             "scene": "上一条主动消息发出去之后的互动",
             "tone": "自然",
             "impulse": "想接着刚才的话继续聊聊",
-            "_scheduled_ts": _now_ts() + delay_minutes * 60,
+            "_scheduled_ts": _engine_host._now_ts() + delay_minutes * 60,
             "_origin_action": action,
             "_origin_reason": reason,
             "_cancel_on_inbound": True,
@@ -1094,7 +1095,7 @@ class ProactiveEngineEventMixin:
             return None
         if not self._screen_glance_available(user, ignore_daily_limit=True):
             return None
-        now = _now_ts()
+        now = _engine_host._now_ts()
         cooldown = max(
             30,
             runtime_persona_setting(self, "unanswered_screen_peek_cooldown_minutes", 180),
@@ -1147,10 +1148,10 @@ class ProactiveEngineEventMixin:
             latest = end.timestamp()
             if earliest >= latest:
                 return 0
-            scheduled = random.uniform(earliest, latest)
+            scheduled = _engine_host.random.uniform(earliest, latest)
             event["_scheduled_ts"] = scheduled
             return scheduled
-        scheduled = self._move_timestamp_into_reason_window(_now_ts() + random.uniform(2 * 3600, 10 * 3600), reason)
+        scheduled = self._move_timestamp_into_reason_window(_engine_host._now_ts() + _engine_host.random.uniform(2 * 3600, 10 * 3600), reason)
         event["_scheduled_ts"] = scheduled
         return scheduled
 
@@ -1163,7 +1164,7 @@ class ProactiveEngineEventMixin:
     ) -> bool:
         if not self._is_sticky_greeting_reason(reason):
             return False
-        now_dt = self._environment_fromtimestamp(now or _now_ts())
+        now_dt = self._environment_fromtimestamp(now or _engine_host._now_ts())
         windows = self._reason_windows(reason)
         if not windows:
             return False
@@ -1173,11 +1174,11 @@ class ProactiveEngineEventMixin:
             end_dt = datetime.combine(today, datetime.min.time(), tzinfo=now_dt.tzinfo) + timedelta(minutes=end)
             if now_dt >= end_dt:
                 continue
-            earliest = max(now_dt + timedelta(minutes=random.randint(6, 14)), start_dt)
+            earliest = max(now_dt + timedelta(minutes=_engine_host.random.randint(6, 14)), start_dt)
             latest = end_dt - timedelta(minutes=3)
             if earliest >= latest:
                 continue
-            user["next_proactive_at"] = random.uniform(earliest.timestamp(), latest.timestamp())
+            user["next_proactive_at"] = _engine_host.random.uniform(earliest.timestamp(), latest.timestamp())
             return True
         return False
 
@@ -1236,7 +1237,7 @@ class ProactiveEngineEventMixin:
             chance += 0.05
         if self._is_vague_seek_user_motive(reason, action, motive):
             chance *= 0.45
-        return random.random() < min(0.32, chance)
+        return _engine_host.random.random() < min(0.32, chance)
 
     def _build_name_only_opener(self, name: str) -> str:
         clean_name = _single_line(name, 24) or runtime_persona_setting(
@@ -1255,7 +1256,7 @@ class ProactiveEngineEventMixin:
         chain: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         profile = self._persona_action_profile()
-        delay_minutes = random.randint(26, 95)
+        delay_minutes = _engine_host.random.randint(26, 95)
         complaint_chance = 0.18
         if profile.get("clingy"):
             complaint_chance += 0.16
@@ -1264,7 +1265,7 @@ class ProactiveEngineEventMixin:
         if reason in {"quiet_care", "insomnia_night", "evening_greeting"}:
             complaint_chance += 0.08
         if reason == "morning_greeting":
-            delay_minutes = random.randint(80, 150)
+            delay_minutes = _engine_host.random.randint(80, 150)
             complaint_chance = min(complaint_chance, 0.08)
         chain = list(chain or [])
         no_reply_step = None
@@ -1283,15 +1284,15 @@ class ProactiveEngineEventMixin:
         return {
             "active": True,
             "resume_ready": False,
-            "created_at": _now_ts(),
+            "created_at": _engine_host._now_ts(),
             "opener_text": _single_line(opener_text, 60),
             "reason": reason,
             "action": action,
             "motive": self._normalize_internal_motive_text(motive),
             "summary": _single_line(action_summary, 60),
-            "complaint_enabled": bool(no_reply_step) or random.random() < min(0.55, complaint_chance),
+            "complaint_enabled": bool(no_reply_step) or _engine_host.random.random() < min(0.55, complaint_chance),
             "complaint_sent": False,
-            "complaint_after_ts": _now_ts() + complaint_after_minutes * 60,
+            "complaint_after_ts": _engine_host._now_ts() + complaint_after_minutes * 60,
             "complaint_reason": _single_line((no_reply_step or {}).get("reason"), 40),
             "complaint_topic": _single_line((no_reply_step or {}).get("topic"), 80),
             "complaint_motive": self._normalize_internal_motive_text(_single_line((no_reply_step or {}).get("motive"), 100)),

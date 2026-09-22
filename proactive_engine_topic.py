@@ -5,6 +5,7 @@
 方法体零改动：所有 self.xxx 依赖通过继承链解析（宿主类 ProactiveEngineMixin）。
 """
 from __future__ import annotations
+from .proactive_engine_shared import _engine_host
 
 import random
 import re
@@ -211,7 +212,7 @@ class ProactiveEngineTopicMixin:
                 if activity:
                     return self._soften_topic_hook(activity)
         if reason in {"activity_share", "diary_share"}:
-            if random.random() < 0.88 or not weather_topic_available:
+            if _engine_host.random.random() < 0.88 or not weather_topic_available:
                 return self._pick_life_thought_topic(reason)
             if any(token in weather for token in ("雨", "小雨", "阵雨")):
                 return "外面那阵雨声"

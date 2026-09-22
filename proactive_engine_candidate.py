@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from .logging_util import get_module_logger
+from .proactive_engine_shared import _engine_host
 
 logger = get_module_logger(__name__)
 
@@ -217,7 +218,7 @@ class ProactiveEngineCandidateMixin:
         return removed
 
     def _cleanup_proactive_candidate_pool(self, *, now: float | None = None) -> list[dict[str, Any]]:
-        now = now or _now_ts()
+        now = now or _engine_host._now_ts()
         kept: list[dict[str, Any]] = []
         for item in self._proactive_candidate_pool():
             if not isinstance(item, dict):
@@ -279,7 +280,7 @@ class ProactiveEngineCandidateMixin:
         *,
         now: float | None = None,
     ) -> list[dict[str, Any]]:
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         kept: list[dict[str, Any]] = []
         for item in self._proactive_impulse_pool(user):
             if not isinstance(item, dict):
@@ -346,7 +347,7 @@ class ProactiveEngineCandidateMixin:
         source: str = "",
         now: float | None = None,
     ) -> tuple[float, float, float, float]:
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         preferred_ts = _safe_float(event.get("_scheduled_ts"), 0)
         start_ts = preferred_ts
         end_ts = 0.0
@@ -668,8 +669,8 @@ class ProactiveEngineCandidateMixin:
         quota_policy = self._proactive_quota_policy(user)
         return {
             "id": uuid.uuid4().hex[:12],
-            "created_ts": _now_ts(),
-            "updated_ts": _now_ts(),
+            "created_ts": _engine_host._now_ts(),
+            "updated_ts": _engine_host._now_ts(),
             "state": "queued",
             "source": _single_line(source, 40) or "random",
             "kind": proactive_kind,
@@ -682,10 +683,10 @@ class ProactiveEngineCandidateMixin:
             "topic": impulse_topic,
             "motive": impulse_motive,
             "conversation_posture": posture,
-            "window_start_at": max(0.0, float(window_start_at or preferred_ts or _now_ts())),
-            "preferred_ts": max(0.0, float(preferred_ts or window_start_at or _now_ts())),
-            "best_until_at": max(float(best_until_at or preferred_ts or _now_ts()), float(window_start_at or 0.0)),
-            "expire_at": max(float(expire_at or best_until_at or preferred_ts or _now_ts()), float(best_until_at or 0.0)),
+            "window_start_at": max(0.0, float(window_start_at or preferred_ts or _engine_host._now_ts())),
+            "preferred_ts": max(0.0, float(preferred_ts or window_start_at or _engine_host._now_ts())),
+            "best_until_at": max(float(best_until_at or preferred_ts or _engine_host._now_ts()), float(window_start_at or 0.0)),
+            "expire_at": max(float(expire_at or best_until_at or preferred_ts or _engine_host._now_ts()), float(best_until_at or 0.0)),
             "window_timezone": _single_line(window_timezone, 64)
             or _engine_proactive_window_timezone(self),
             "salience": max(0.0, min(1.0, salience)),
@@ -813,12 +814,12 @@ class ProactiveEngineCandidateMixin:
         incoming: dict[str, Any],
     ) -> dict[str, Any]:
         existing_id = _single_line(existing.get("id"), 20) or uuid.uuid4().hex[:12]
-        existing_created = _safe_float(existing.get("created_ts"), _now_ts())
+        existing_created = _safe_float(existing.get("created_ts"), _engine_host._now_ts())
         existing_state = _single_line(existing.get("state"), 24) or "queued"
         replacement = dict(incoming)
         replacement["id"] = existing_id
         replacement["created_ts"] = existing_created
-        replacement["updated_ts"] = _now_ts()
+        replacement["updated_ts"] = _engine_host._now_ts()
         replacement["state"] = existing_state
         self._merge_proactive_impulse_timing(replacement, existing)
         replacement["signature"] = self._proactive_impulse_signature(replacement)
@@ -842,7 +843,7 @@ class ProactiveEngineCandidateMixin:
         disabled = getattr(self, "_proactive_generation_disabled", None)
         if callable(disabled) and disabled(user):
             return {}
-        check_now = _now_ts()
+        check_now = _engine_host._now_ts()
         prepared, invalid_reason = self._prepare_proactive_candidate_window(
             impulse,
             reason=_single_line(impulse.get("reason"), 40) or "check_in",
@@ -895,7 +896,7 @@ class ProactiveEngineCandidateMixin:
             closing_deferred = bool(
                 existing.get("conversation_closing_deferred") or impulse.get("conversation_closing_deferred")
             )
-            existing["updated_ts"] = _now_ts()
+            existing["updated_ts"] = _engine_host._now_ts()
             if existing_start <= 0:
                 existing["window_start_at"] = incoming_start
             elif incoming_start > 0:
@@ -996,7 +997,7 @@ class ProactiveEngineCandidateMixin:
                     return self._replace_proactive_impulse_with_higher_priority(existing, impulse)
                 if incoming_priority == existing_priority:
                     self._merge_proactive_impulse_timing(existing, impulse)
-                existing["updated_ts"] = _now_ts()
+                existing["updated_ts"] = _engine_host._now_ts()
                 existing["salience"] = max(
                     _safe_float(existing.get("salience"), 0.0),
                     _safe_float(impulse.get("salience"), 0.0),
@@ -1047,7 +1048,7 @@ class ProactiveEngineCandidateMixin:
         posture = _single_line(marker.get("posture"), 24).lower()
         if posture and posture != "closing":
             return 0.0
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         at = _safe_float(marker.get("at"), 0.0)
         if at <= 0:
             return 0.0
@@ -1158,7 +1159,7 @@ class ProactiveEngineCandidateMixin:
         disabled = getattr(self, "_proactive_generation_disabled", None)
         if callable(disabled) and disabled(user):
             return None
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         candidate = self._prepare_proactive_route_candidate(
             user,
             candidate,
@@ -1238,7 +1239,7 @@ class ProactiveEngineCandidateMixin:
         return impulse
 
     def _impulse_ready_now(self, impulse: dict[str, Any], *, now: float | None = None) -> bool:
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         return (
             str(impulse.get("state") or "queued") in {"queued", "deferred"}
             and check_now >= _safe_float(impulse.get("window_start_at"), 0)
@@ -1252,7 +1253,7 @@ class ProactiveEngineCandidateMixin:
         *,
         now: float | None = None,
     ) -> float:
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         proactive_kind = _single_line(impulse.get("kind"), 40) or self._proactive_message_kind(
             reason=impulse.get("reason"),
             source=impulse.get("source"),
@@ -1647,7 +1648,7 @@ class ProactiveEngineCandidateMixin:
         *,
         now: float | None = None,
     ) -> tuple[str, str]:
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         start_at = _safe_float(user.get("planned_proactive_window_start_at"), 0)
         best_until = _safe_float(user.get("planned_proactive_best_until_at"), 0)
         expire_at = _safe_float(user.get("planned_proactive_expire_at"), 0)
@@ -1785,7 +1786,7 @@ class ProactiveEngineCandidateMixin:
     ) -> dict[str, Any]:
         if not isinstance(user, dict):
             return {}
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         delivery_key = self._planned_proactive_delivery_key(user)
         if not delivery_key:
             return {}
@@ -1823,7 +1824,7 @@ class ProactiveEngineCandidateMixin:
             return "主动候选已被清理或替换"
         if _single_line(current.get("key"), 80) != _single_line(snapshot.get("key"), 80):
             return "主动候选在生成期间已变化"
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         expire_at = _safe_float(current.get("expire_at"), 0)
         if expire_at > 0 and check_now > expire_at and self._normalize_legacy_proactive_text(user.get("planned_proactive_source"), limit=40) != "timer":
             return "主动候选在生成期间已过期"
@@ -1852,7 +1853,7 @@ class ProactiveEngineCandidateMixin:
         delay_minutes: tuple[float, float] = (30.0, 90.0),
         block_current: bool = False,
     ) -> bool:
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         impulse = self._planned_proactive_impulse(user)
         current_id = _single_line(user.get("planned_proactive_impulse_id"), 20)
         delivery = self._ensure_planned_proactive_delivery_state(user, now=check_now)
@@ -1861,7 +1862,7 @@ class ProactiveEngineCandidateMixin:
         source = _single_line(user.get("planned_proactive_source"), 40)
         hard_expire_at = _safe_float(user.get("planned_proactive_expire_at"), 0) if source == "body_monitor" else 0
         if hard_expire_at > 0 and not block_current:
-            delay = random.uniform(max(1.0, delay_minutes[0]), max(delay_minutes[0] + 1.0, delay_minutes[1])) * 60
+            delay = _engine_host.random.uniform(max(1.0, delay_minutes[0]), max(delay_minutes[0] + 1.0, delay_minutes[1])) * 60
             next_window = check_now + delay
             if next_window >= hard_expire_at:
                 self._mark_planned_candidate_status(user, "blocked", "身体状态事件有效期已结束")
@@ -1900,7 +1901,7 @@ class ProactiveEngineCandidateMixin:
             return bool(_single_line(user.get("planned_proactive_impulse_id"), 20) != current_id)
         if is_immediate and not block_current:
             self._mark_planned_candidate_status(user, "deferred", note)
-            delay = random.uniform(max(1.0, delay_minutes[0]), max(delay_minutes[0] + 1.0, delay_minutes[1])) * 60
+            delay = _engine_host.random.uniform(max(1.0, delay_minutes[0]), max(delay_minutes[0] + 1.0, delay_minutes[1])) * 60
             next_window = min(check_now + delay, best_until) if best_until > 0 else check_now + delay
             capped_expire_at = best_until + 8 * 60 if best_until > 0 else 0
             if isinstance(impulse, dict):
@@ -1935,7 +1936,7 @@ class ProactiveEngineCandidateMixin:
                 impulse["hesitation_at"] = check_now
                 impulse["hesitation_note"] = _single_line(note, 160)
                 self._remember_proactive_hesitation(user, impulse, note=note, now=check_now)
-                delay = random.uniform(max(1.0, delay_minutes[0]), max(delay_minutes[0] + 1.0, delay_minutes[1])) * 60
+                delay = _engine_host.random.uniform(max(1.0, delay_minutes[0]), max(delay_minutes[0] + 1.0, delay_minutes[1])) * 60
                 next_window = check_now + delay
                 impulse["state"] = "deferred"
                 impulse["window_start_at"] = next_window
@@ -1943,7 +1944,7 @@ class ProactiveEngineCandidateMixin:
                 impulse["best_until_at"] = max(_safe_float(impulse.get("best_until_at"), 0), next_window + 25 * 60)
                 impulse["expire_at"] = max(_safe_float(impulse.get("expire_at"), 0), next_window + 90 * 60)
         elif not block_current:
-            delay = random.uniform(max(1.0, delay_minutes[0]), max(delay_minutes[0] + 1.0, delay_minutes[1])) * 60
+            delay = _engine_host.random.uniform(max(1.0, delay_minutes[0]), max(delay_minutes[0] + 1.0, delay_minutes[1])) * 60
             next_window = check_now + delay
             user["next_proactive_at"] = next_window
             user["planned_proactive_window_start_at"] = next_window
@@ -1962,7 +1963,7 @@ class ProactiveEngineCandidateMixin:
         *,
         now: float | None = None,
     ) -> tuple[bool, str]:
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         quiet_end_getter = getattr(self, "_quiet_hours_end_timestamp", None)
         quiet_end = _safe_float(quiet_end_getter(check_now), 0.0) if callable(quiet_end_getter) else 0.0
         if quiet_end <= check_now:
@@ -1970,7 +1971,7 @@ class ProactiveEngineCandidateMixin:
         source = self._normalize_legacy_proactive_text(user.get("planned_proactive_source"), limit=40)
         if source in {"timer", "troubleshooting", "simulation"}:
             return False, "来源不参与免打扰改期"
-        target = quiet_end + random.uniform(2 * 60, 8 * 60)
+        target = quiet_end + _engine_host.random.uniform(2 * 60, 8 * 60)
         delivery = self._ensure_planned_proactive_delivery_state(user, now=check_now)
         freshness = _single_line(delivery.get("freshness"), 24) or self._planned_proactive_freshness_class(user)
         expire_at = _safe_float(user.get("planned_proactive_expire_at"), 0)
@@ -2053,7 +2054,7 @@ class ProactiveEngineCandidateMixin:
         note: str = "",
         now: float | None = None,
     ) -> None:
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         raw = user.setdefault("recent_proactive_hesitations", [])
         if not isinstance(raw, list):
             raw = []
@@ -2093,7 +2094,7 @@ class ProactiveEngineCandidateMixin:
         *,
         now: float | None = None,
     ) -> bool:
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         user_id = str(user.get("user_id") or user.get("id") or "")
         active = [
             item
@@ -2278,7 +2279,7 @@ class ProactiveEngineCandidateMixin:
             target_user = users.get(str(user_id)) if isinstance(users.get(str(user_id)), dict) else None
         if callable(disabled) and disabled(target_user):
             return {}
-        now = _now_ts()
+        now = _engine_host._now_ts()
         source_hint = _single_line(candidate.get("source"), 40) or "unknown"
         if isinstance(target_user, dict):
             candidate = self._prepare_proactive_route_candidate(
@@ -2480,7 +2481,7 @@ class ProactiveEngineCandidateMixin:
             return False
         if self._recent_proactive_topic_repeated(user, signature):
             return True
-        now = _now_ts()
+        now = _engine_host._now_ts()
         user_id = str(user.get("user_id") or user.get("id") or "")
         for item in self._cleanup_proactive_candidate_pool(now=now):
             if str(item.get("user_id") or "") != user_id:
@@ -2502,7 +2503,7 @@ class ProactiveEngineCandidateMixin:
 
     def _offer_proactive_candidate(self, user_id: str, user: dict[str, Any], candidate: dict[str, Any]) -> bool:
         user["user_id"] = str(user.get("user_id") or user_id)
-        now = _now_ts()
+        now = _engine_host._now_ts()
         source = _single_line(candidate.get("source"), 40) or "unknown"
         scheduled = _safe_float(candidate.get("scheduled_ts"), now)
         prepared, invalid_window_reason = self._prepare_proactive_candidate_window(
@@ -2932,7 +2933,7 @@ class ProactiveEngineCandidateMixin:
                     if str(item.get("id") or "") == candidate_id:
                         item["status"] = status
                         item["note"] = _single_line(note, 160)
-                        item["updated_ts"] = _now_ts()
+                        item["updated_ts"] = _engine_host._now_ts()
                         break
             impulse_id = _single_line(user.get("planned_proactive_impulse_id"), 20)
             if not impulse_id:
@@ -2940,7 +2941,7 @@ class ProactiveEngineCandidateMixin:
             for impulse in self._cleanup_proactive_impulses(user):
                 if _single_line(impulse.get("id"), 20) != impulse_id:
                     continue
-                impulse["updated_ts"] = _now_ts()
+                impulse["updated_ts"] = _engine_host._now_ts()
                 impulse["last_status"] = _single_line(status, 24)
                 impulse["last_note"] = _single_line(note, 160)
                 if status in {"sent"}:
@@ -3012,7 +3013,7 @@ class ProactiveEngineCandidateMixin:
             user.get("planned_proactive_topic"),
             user=user,
         )
-        if self._photo_text_available(user) and photo_probability > 0 and random.random() < photo_probability:
+        if self._photo_text_available(user) and photo_probability > 0 and _engine_host.random.random() < photo_probability:
             return "photo_text"
         if self._photo_text_available(user) and (
             reason in {"activity_share", "diary_share", "background_schedule", "noon_greeting", "evening_greeting"}
@@ -3031,7 +3032,7 @@ class ProactiveEngineCandidateMixin:
     def _pick_best_planned_event(
         self, user: dict[str, Any], now: float | None = None
     ) -> dict[str, Any] | None:
-        now = now or _now_ts()
+        now = now or _engine_host._now_ts()
         candidates = []
         for event in (
             self._pick_pending_followup_event(user, now),
@@ -3092,5 +3093,5 @@ class ProactiveEngineCandidateMixin:
             key=lambda item: (self._event_priority(item[1]), item[0]),
         )
         top = ranked[:3]
-        return random.choice(top)[1]
+        return _engine_host.random.choice(top)[1]
 

@@ -15,6 +15,7 @@ from .proactive_routes import PROACTIVE_ROUTE_REGISTRY
 from typing import Any
 
 from .logging_util import get_module_logger
+from .proactive_engine_shared import _engine_host
 
 logger = get_module_logger(__name__)
 
@@ -64,7 +65,7 @@ class ProactiveEngineGateMixin:
             return False, "每日上限为 0"
         if self._simulation_active(user):
             return self._should_send_simulation(user)
-        now = _now_ts()
+        now = _engine_host._now_ts()
         due_timer_active = self._has_due_llm_timer(user, now=now)
         planned_timezone = _single_line(
             user.get("planned_proactive_window_timezone"),
@@ -296,7 +297,7 @@ class ProactiveEngineGateMixin:
                 adjusted_reason = "情绪/关系状态处于收敛期"
             after_next_at = _safe_float(user.get("next_proactive_at"), 0)
             if after_next_at <= now and gate_until > now:
-                after_next_at = gate_until + random.uniform(15 * 60, 75 * 60)
+                after_next_at = gate_until + _engine_host.random.uniform(15 * 60, 75 * 60)
                 user["next_proactive_at"] = after_next_at
                 user["planned_proactive_window_start_at"] = after_next_at
                 user["planned_proactive_best_until_at"] = after_next_at + 45 * 60
@@ -692,7 +693,7 @@ class ProactiveEngineGateMixin:
         return True, "ok"
 
     def _proactive_decision_factors(self, user: dict[str, Any], *, now: float | None = None) -> list[dict[str, Any]]:
-        now = _now_ts() if now is None else now
+        now = _engine_host._now_ts() if now is None else now
         factors: list[dict[str, Any]] = []
 
         def add(
@@ -1133,7 +1134,7 @@ class ProactiveEngineGateMixin:
         probability -= min(0.18, ignored_streak * 0.07) * min(1.0, unanswered_weight)
         probability *= self._daily_intensity_factor(user)
         probability = max(0.12, min(0.9, probability))
-        return random.random() < probability
+        return _engine_host.random.random() < probability
 
     async def _render_message(self, user: dict[str, Any]) -> tuple[str, str, str, list[Any], str, str]:
         name = str(user.get("nickname") or runtime_persona_setting(self, "default_nickname", "你"))

@@ -5,6 +5,7 @@
 方法体零改动：所有 self.xxx 依赖通过继承链解析（宿主类 ProactiveEngineMixin）。
 """
 from __future__ import annotations
+from .proactive_engine_shared import _engine_host
 
 import random
 import re
@@ -143,7 +144,7 @@ class ProactiveEngineMealMixin:
         if self._private_user_role(user) != "owner":
             return None
         self._reset_meal_care_day(user)
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         followup = self._meal_care_followup_event(user, now=check_now)
         if isinstance(followup, dict):
             return followup
@@ -176,7 +177,7 @@ class ProactiveEngineMealMixin:
             if earliest >= end_dt:
                 continue
             latest = min(end_dt, earliest + timedelta(minutes=42))
-            scheduled = random.uniform(earliest.timestamp(), max(earliest.timestamp() + 60, latest.timestamp()))
+            scheduled = _engine_host.random.uniform(earliest.timestamp(), max(earliest.timestamp() + 60, latest.timestamp()))
             context = {
                 "active": False,
                 "date": _today_key(),
@@ -265,7 +266,7 @@ class ProactiveEngineMealMixin:
         return start, end
 
     def _insomnia_night_key(self, now: float | None = None) -> str:
-        current = self._environment_fromtimestamp(_now_ts() if now is None else now)
+        current = self._environment_fromtimestamp(_engine_host._now_ts() if now is None else now)
         # 23:00-05:59 is one night, even though it crosses midnight.
         return (current - timedelta(hours=6)).date().isoformat()
 

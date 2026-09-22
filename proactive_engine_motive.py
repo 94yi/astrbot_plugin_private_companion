@@ -5,6 +5,7 @@
 方法体零改动：所有 self.xxx 依赖通过继承链解析（宿主类 ProactiveEngineMixin）。
 """
 from __future__ import annotations
+from .proactive_engine_shared import _engine_host
 
 import random
 import re
@@ -65,7 +66,7 @@ class ProactiveEngineMotiveMixin:
         if not topic and current_item:
             topic = _single_line(current_item.get("title"), 36)
         if not topic and isinstance(can_do, list) and can_do and reason == "activity_share":
-            topic = _single_line(random.choice(can_do), 28)
+            topic = _single_line(_engine_host.random.choice(can_do), 28)
         if not topic:
             topic = self._choose_proactive_topic(reason, user)
         location_scene_getter = getattr(self, "_mobile_user_proactive_scene", None)
@@ -90,13 +91,13 @@ class ProactiveEngineMotiveMixin:
             return self._normalize_internal_motive_text("现在人在公司，雨天提醒更适合落在下班回家前")
         if self._private_user_role(user) == "friend":
             if reason in {"quiet_care", "check_in", "state_share"}:
-                return random.choice([
+                return _engine_host.random.choice([
                     "作为朋友想到对方可能正忙，只问一句，不要求立刻回复",
                     "朋友之间顺手关心一下近况,说完就把空间留给对方",
                     "看到前面的话题还有一点余味,礼貌地补一句就停",
                 ])
             if reason in {"morning_greeting", "noon_greeting", "evening_greeting"}:
-                return random.choice([
+                return _engine_host.random.choice([
                     "按次要用户关系顺手打个招呼,语气轻一点,不显得黏人",
                     "这个时间点刚好想起对方",
                 ])
@@ -150,7 +151,7 @@ class ProactiveEngineMotiveMixin:
             ]
             if action == "voice":
                 motives.append("夜里不想打太多字，想发语音")
-            return random.choice(motives)
+            return _engine_host.random.choice(motives)
         if reason == "state_share":
             motives = [
                 "这会儿说话可能慢一点",
@@ -159,7 +160,7 @@ class ProactiveEngineMotiveMixin:
             ]
             if energy < 45:
                 motives.append("不太想说长句，但想看看那边还在不在")
-            return random.choice(motives)
+            return _engine_host.random.choice(motives)
         if reason == "quiet_care":
             motives = [
                 "刚刚有点在意用户是不是又忙太久了",
@@ -170,7 +171,7 @@ class ProactiveEngineMotiveMixin:
                 motives.append(f"想起用户前面提过“{last_user_message}”，有点放心不下")
             elif topic:
                 motives.append(f"刚刚想到“{topic}”的时候，也想起用户那边")
-            return random.choice(motives)
+            return _engine_host.random.choice(motives)
         if reason == "group_share":
             share = user.get("group_share_context") if isinstance(user.get("group_share_context"), dict) else {}
             group_id = _single_line(share.get("group_id"), 24)
@@ -202,9 +203,9 @@ class ProactiveEngineMotiveMixin:
                 motives.append("外面在下雨")
             if weather_topic_available and any(token in weather for token in ("晴", "阳光", "晚霞")):
                 motives.append("外面光线不错")
-            return random.choice(motives)
+            return _engine_host.random.choice(motives)
         if reason == "diary_share":
-            return random.choice([
+            return _engine_host.random.choice([
                 "翻到今天记下来的小片段",
                 "看到今天写下来的那句话，觉得可以给你看看",
                 "今天有个小片段还记着",
@@ -223,7 +224,7 @@ class ProactiveEngineMotiveMixin:
             game = user.get("game_invite_context") if isinstance(user.get("game_invite_context"), dict) else {}
             return f"想起上次的{_single_line(game.get('game_label'), 36) or '那局游戏'}，有点想再约一局"
         if reason == "important_date_share":
-            return random.choice([
+            return _engine_host.random.choice([
                 "怕用户转头又忘，就先提醒一句",
                 "今天这个时间点该提醒一下用户",
                 "还记着这件事，所以想提醒用户一句",
@@ -236,19 +237,19 @@ class ProactiveEngineMotiveMixin:
             ]
             if topic:
                 motives.append(f"手上这点“{topic}”还没结束")
-            return random.choice(motives)
+            return _engine_host.random.choice(motives)
         if reason == "morning_greeting":
-            return random.choice([
+            return _engine_host.random.choice([
                 "还没太清醒，先打个招呼",
                 "刚醒，先打个招呼",
             ])
         if reason == "noon_greeting":
-            return random.choice([
+            return _engine_host.random.choice([
                 "中午有点懒",
                 "午间松下来了",
             ])
         if reason == "evening_greeting":
-            return random.choice([
+            return _engine_host.random.choice([
                 "晚上安静下来了",
                 "白天快结束了",
             ])
@@ -257,7 +258,7 @@ class ProactiveEngineMotiveMixin:
             "还记着眼前这点小事",
             "刚松一口气",
         ]
-        return self._normalize_internal_motive_text(random.choice(motives))
+        return self._normalize_internal_motive_text(_engine_host.random.choice(motives))
 
     def _normalize_internal_motive_text(self, text: str) -> str:
         cleaned = _single_line(text, 80)

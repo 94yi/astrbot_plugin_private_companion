@@ -18,6 +18,7 @@ from datetime import datetime
 from typing import Any
 
 from .logging_util import get_module_logger
+from .proactive_engine_shared import _engine_host
 
 logger = get_module_logger(__name__)
 
@@ -369,7 +370,7 @@ class ProactiveEnginePersonaMixin:
     ) -> dict[str, Any] | None:
         if not signature:
             return None
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         ttl = max(
             5,
             _safe_int(
@@ -628,7 +629,7 @@ class ProactiveEnginePersonaMixin:
         *,
         now: float | None = None,
     ) -> str:
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         current_time = datetime.fromtimestamp(check_now).astimezone().strftime("%Y-%m-%d %H:%M:%S %z")
         last_user_at = _safe_float(user.get("last_user_message_at"), 0)
         if last_user_at <= 0:
@@ -881,7 +882,7 @@ class ProactiveEnginePersonaMixin:
         *,
         now: float | None = None,
     ) -> dict[str, Any]:
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         if not bool(runtime_persona_setting(self, "enable_llm_proactive_persona_judge", True)):
             return {"decision": "send", "score": 100, "reason": "模型人格判定关闭"}
         if self._normalize_legacy_proactive_text(user.get("planned_proactive_source"), limit=40) in {"timer", "troubleshooting", "simulation"}:
@@ -995,7 +996,7 @@ class ProactiveEnginePersonaMixin:
             for key, value in judgement.items()
             if key in {"decision", "score", "reason", "hard", "delay_minutes", "reason_field", "action", "topic", "motive"}
         }
-        judged_at = _now_ts() if now is None else now
+        judged_at = _engine_host._now_ts() if now is None else now
         user["planned_proactive_model_judge_at"] = judged_at
         cache = user.get("proactive_persona_judge_cache")
         cache = dict(cache) if isinstance(cache, dict) else {}

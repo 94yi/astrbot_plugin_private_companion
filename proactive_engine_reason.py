@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from .logging_util import get_module_logger
+from .proactive_engine_shared import _engine_host
 
 logger = get_module_logger(__name__)
 
@@ -25,7 +26,7 @@ class ProactiveEngineReasonMixin:
 
 
     def _window_from_delay_minutes(self, delay_minutes: int, width_minutes: int = 24) -> str:
-        start_dt = self._environment_fromtimestamp(_now_ts() + max(5, delay_minutes) * 60)
+        start_dt = self._environment_fromtimestamp(_engine_host._now_ts() + max(5, delay_minutes) * 60)
         end_dt = start_dt + timedelta(minutes=max(12, width_minutes))
         return f"{start_dt.strftime('%H:%M')}-{end_dt.strftime('%H:%M')}"
 
@@ -92,7 +93,7 @@ class ProactiveEngineReasonMixin:
             reasons.extend(["quiet_care"])
         if has_recent_user_message:
             reasons.extend(["quiet_care"])
-        return random.choice(reasons)
+        return _engine_host.random.choice(reasons)
 
     def _is_greeting_reason(self, reason: str) -> bool:
         return self._normalize_legacy_proactive_text(reason, limit=40) in {"morning_greeting", "noon_greeting", "evening_greeting"}
@@ -117,7 +118,7 @@ class ProactiveEngineReasonMixin:
     ) -> bool:
         if not reason:
             return False
-        now_dt = self._environment_fromtimestamp(now or _now_ts())
+        now_dt = self._environment_fromtimestamp(now or _engine_host._now_ts())
         minute_of_day = now_dt.hour * 60 + now_dt.minute
         for start, end in self._reason_windows(reason, user):
             if start <= minute_of_day <= end:
@@ -133,7 +134,7 @@ class ProactiveEngineReasonMixin:
     ) -> bool:
         if not self._is_greeting_reason(reason):
             return False
-        now_dt = self._environment_fromtimestamp(now or _now_ts())
+        now_dt = self._environment_fromtimestamp(now or _engine_host._now_ts())
         minute_of_day = now_dt.hour * 60 + now_dt.minute
         lead_minutes = {
             "morning_greeting": 10,
@@ -154,7 +155,7 @@ class ProactiveEngineReasonMixin:
     ) -> bool:
         if not self._is_greeting_reason(reason):
             return False
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         recent_at = self._latest_private_user_activity_ts(user)
         if recent_at <= 0:
             return False
@@ -184,7 +185,7 @@ class ProactiveEngineReasonMixin:
             if 0 < index <= 6:
                 compact = compact[index:]
                 break
-        now_dt = self._environment_fromtimestamp(now or _now_ts())
+        now_dt = self._environment_fromtimestamp(now or _engine_host._now_ts())
         minute = now_dt.hour * 60 + now_dt.minute
         if compact == "早" or (
             compact.startswith("早")
@@ -255,7 +256,7 @@ class ProactiveEngineReasonMixin:
             sent.append(reason)
             changed = True
         if reason == "morning_greeting" and _safe_float(user.get("morning_greeting_sent_at"), 0) <= 0:
-            user["morning_greeting_sent_at"] = _safe_float(sent_at, 0) or _now_ts()
+            user["morning_greeting_sent_at"] = _safe_float(sent_at, 0) or _engine_host._now_ts()
             user["morning_greeting_reply_at"] = 0
             changed = True
         return changed
@@ -385,7 +386,7 @@ class ProactiveEngineReasonMixin:
         context = user.get("post_goodnight_group_activity_context")
         if not isinstance(context, dict):
             return False
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         activity_at = _safe_float(context.get("group_activity_at"), 0)
         rest_set_at = _safe_float(context.get("rest_set_at"), 0)
         return bool(
@@ -455,7 +456,7 @@ class ProactiveEngineReasonMixin:
                 window_end = datetime.combine(
                     dt.date(), datetime.min.time(), tzinfo=dt.tzinfo
                 ).replace(hour=eh % 24, minute=em)
-                return min(timestamp + random.randint(0, 17 * 60), window_end.timestamp())
+                return min(timestamp + _engine_host.random.randint(0, 17 * 60), window_end.timestamp())
         first_start = windows[0][0]
         target_date = dt.date()
         if all(minute >= end for _, end in windows):
@@ -471,7 +472,7 @@ class ProactiveEngineReasonMixin:
         tail_window_end = datetime.combine(
             target_date, datetime.min.time(), tzinfo=dt.tzinfo
         ).replace(hour=th % 24, minute=tm)
-        return min(target.timestamp() + random.randint(0, 59 * 60), tail_window_end.timestamp())
+        return min(target.timestamp() + _engine_host.random.randint(0, 59 * 60), tail_window_end.timestamp())
 
     def _can_send_insomnia_night_message(
         self,
@@ -485,7 +486,7 @@ class ProactiveEngineReasonMixin:
             return False
         if self._private_user_role(user) != "owner":
             return False
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         current = self._environment_fromtimestamp(check_now)
         hour = current.hour
         if not (0 <= hour <= 5 or hour >= 23):

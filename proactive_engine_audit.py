@@ -21,6 +21,7 @@ from .proactive_routes import PROACTIVE_ROUTE_REGISTRY
 from typing import Any
 
 from .logging_util import get_module_logger
+from .proactive_engine_shared import _engine_host
 
 logger = get_module_logger(__name__)
 
@@ -31,7 +32,7 @@ class ProactiveEngineAuditMixin:
 
 
     def _proactive_decision_snapshot(self, user: dict[str, Any], *, now: float | None = None) -> dict[str, Any]:
-        now = _now_ts() if now is None else now
+        now = _engine_host._now_ts() if now is None else now
         factors = self._proactive_decision_factors(user, now=now)
         blocker_labels = [item.get("label") for item in factors if item.get("blocker")]
         total_score = 0
@@ -60,7 +61,7 @@ class ProactiveEngineAuditMixin:
         window_days: int = 7,
     ) -> dict[str, Any]:
         """Aggregate recent review outcomes so tuning is evidence-based."""
-        check_now = _now_ts() if now is None else float(now)
+        check_now = _engine_host._now_ts() if now is None else float(now)
         cutoff = check_now - max(1, min(30, int(window_days or 7))) * 86400
         decision_counts: dict[str, int] = {}
         reason_counts: dict[str, int] = {}
@@ -125,7 +126,7 @@ class ProactiveEngineAuditMixin:
             return False
         audit_id = _single_line(user.get("last_proactive_reply_audit_id"), 40)
         sent_at = _safe_float(user.get("last_proactive_reply_audit_sent_at"), 0)
-        check_at = _now_ts() if received_at is None else float(received_at)
+        check_at = _engine_host._now_ts() if received_at is None else float(received_at)
         if not audit_id or sent_at <= 0 or check_at < sent_at or check_at - sent_at > 24 * 3600:
             return False
         for item in reversed(self._proactive_audit_log()):
@@ -254,7 +255,7 @@ class ProactiveEngineAuditMixin:
         final_text: str = "",
         diagnostic_detail: str = "",
     ) -> str:
-        now = _now_ts()
+        now = _engine_host._now_ts()
         audit_id = uuid.uuid4().hex[:12]
         semantics = self._planned_proactive_semantics(user)
         item = {
@@ -345,7 +346,7 @@ class ProactiveEngineAuditMixin:
                 continue
             previous_status = _single_line(item.get("status"), 32)
             item["status"] = _single_line(status, 32) or item.get("status") or "unknown"
-            item["updated_ts"] = _now_ts()
+            item["updated_ts"] = _engine_host._now_ts()
             if note:
                 item["note"] = self._proactive_audit_safe_note(note, limit=180)
             if text:
@@ -394,7 +395,7 @@ class ProactiveEngineAuditMixin:
     def _recover_stale_proactive_sending(self, user: dict[str, Any], *, now: float | None = None) -> bool:
         if not user.get("proactive_sending"):
             return False
-        now = now or _now_ts()
+        now = now or _engine_host._now_ts()
         started_at = _safe_float(user.get("proactive_sending_started_at"), 0)
         if started_at > 0 and now - started_at < 8 * 60:
             return False
@@ -408,7 +409,7 @@ class ProactiveEngineAuditMixin:
         return True
 
     def _is_recent_poke_echo(self, user: dict[str, Any], text: str, *, now: float | None = None) -> bool:
-        now = now or _now_ts()
+        now = now or _engine_host._now_ts()
         suppress_until = _safe_float(user.get("poke_echo_suppress_until"), 0)
         if suppress_until <= 0 or now > suppress_until:
             return False
@@ -417,7 +418,7 @@ class ProactiveEngineAuditMixin:
     def _explain_proactive_decision(self, user: dict[str, Any]) -> str:
         probe = dict(user)
         decision, reason = self._should_send(probe)
-        now = _now_ts()
+        now = _engine_host._now_ts()
         snapshot = self._proactive_decision_snapshot(probe, now=now)
         planned_reason = self._normalize_legacy_proactive_text(probe.get("planned_proactive_reason"), limit=40)
         planned_action = str(probe.get("planned_proactive_action") or "message")

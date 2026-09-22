@@ -14,6 +14,13 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from .logging_util import get_module_logger
+try:
+    from lunarcalendar import Converter, Solar
+except Exception:
+    Converter = None
+    Solar = None
+
+from .proactive_engine_shared import _engine_host
 
 logger = get_module_logger(__name__)
 
@@ -56,7 +63,7 @@ class ProactiveEngineBirthdayMixin:
         user: dict[str, Any],
         now: float | None = None,
     ) -> dict[str, Any] | None:
-        now = now or _now_ts()
+        now = now or _engine_host._now_ts()
         if self._private_user_role(user) != "owner" or bool(user.get("birthday_celebration_opt_out")):
             return None
         current = self._environment_fromtimestamp(now)
@@ -85,7 +92,7 @@ class ProactiveEngineBirthdayMixin:
             ):
                 tomorrow = current.date() + timedelta(days=1)
                 target = datetime.combine(tomorrow, datetime.min.time(), tzinfo=current.tzinfo)
-                target += timedelta(minutes=random.randint(1, 7))
+                target += timedelta(minutes=_engine_host.random.randint(1, 7))
                 return {
                     "window": "00:00-00:15",
                     "date": tomorrow.isoformat(),
@@ -105,7 +112,7 @@ class ProactiveEngineBirthdayMixin:
                 return None
             if recent_activity <= 0 or now - recent_activity > 7 * 24 * 3600 or not (17 * 60 + 30 <= minute < 21 * 60 + 30):
                 return None
-            scheduled = now + random.randint(8, 38) * 60
+            scheduled = now + _engine_host.random.randint(8, 38) * 60
             return {
                 "window": self._window_from_delay_minutes(max(5, int((scheduled - now) / 60)), width_minutes=48),
                 "reason": "birthday_eve_hint",
@@ -129,24 +136,24 @@ class ProactiveEngineBirthdayMixin:
                 midnight_end = current.replace(hour=0, minute=15, second=0, microsecond=0).timestamp()
                 remaining = int(midnight_end - now)
                 if remaining > 10:
-                    scheduled = now + random.randint(5, min(150, remaining - 5))
+                    scheduled = now + _engine_host.random.randint(5, min(150, remaining - 5))
                     window = "00:00-00:15"
                 else:
                     midnight = False
             if not midnight and minute < 9 * 60 + 30:
-                scheduled = current.replace(hour=10, minute=random.randint(5, 45), second=0, microsecond=0).timestamp()
+                scheduled = current.replace(hour=10, minute=_engine_host.random.randint(5, 45), second=0, microsecond=0).timestamp()
                 window = "09:30-21:55"
             elif not midnight and minute < 18 * 60 + 30:
-                scheduled = now + random.randint(12, 75) * 60
+                scheduled = now + _engine_host.random.randint(12, 75) * 60
                 window = "09:30-21:55"
             elif not midnight:
                 daytime_end = current.replace(hour=21, minute=55, second=0, microsecond=0).timestamp()
                 remaining = max(20, int(daytime_end - now) - 5)
-                scheduled = now + random.randint(min(8 * 60, remaining), min(35 * 60, remaining))
+                scheduled = now + _engine_host.random.randint(min(8 * 60, remaining), min(35 * 60, remaining))
                 window = "09:30-21:55"
             action = (
                 "photo_text"
-                if not midnight and self._photo_text_available(user) and random.random() < 0.58
+                if not midnight and self._photo_text_available(user) and _engine_host.random.random() < 0.58
                 else "message"
             )
             return {
@@ -168,7 +175,7 @@ class ProactiveEngineBirthdayMixin:
         if _safe_int(event.get("celebrated_year"), 0) != year:
             if minute >= 14 * 60:
                 return None
-            scheduled = now + random.randint(8, 35) * 60
+            scheduled = now + _engine_host.random.randint(8, 35) * 60
             return {
                 "window": self._window_from_delay_minutes(max(5, int((scheduled - now) / 60)), width_minutes=58),
                 "reason": "birthday_makeup",
@@ -186,7 +193,7 @@ class ProactiveEngineBirthdayMixin:
         last_user_at = _safe_float(user.get("last_user_message_at"), 0)
         if last_user_at <= celebrated_at or minute >= 21 * 60 + 30:
             return None
-        scheduled = now + random.randint(18, 70) * 60
+        scheduled = now + _engine_host.random.randint(18, 70) * 60
         return {
             "window": self._window_from_delay_minutes(max(5, int((scheduled - now) / 60)), width_minutes=55),
             "reason": "birthday_afterglow",
@@ -255,7 +262,7 @@ class ProactiveEngineBirthdayMixin:
         user: dict[str, Any],
         now: float | None = None,
     ) -> dict[str, Any] | None:
-        now = now or _now_ts()
+        now = now or _engine_host._now_ts()
         if self._private_user_role(user) != "owner":
             return None
         if bool(user.get("birthday_curiosity_opt_out")) or self._birthday_curiosity_has_known_birthday(user):
@@ -276,10 +283,10 @@ class ProactiveEngineBirthdayMixin:
         next_check_at = _safe_float(user.get("birthday_curiosity_next_check_at"), 0)
         if next_check_at > now:
             return None
-        user["birthday_curiosity_next_check_at"] = now + random.randint(21, 45) * 24 * 3600
-        if random.random() > 0.16:
+        user["birthday_curiosity_next_check_at"] = now + _engine_host.random.randint(21, 45) * 24 * 3600
+        if _engine_host.random.random() > 0.16:
             return None
-        scheduled = now + random.randint(35, 130) * 60
+        scheduled = now + _engine_host.random.randint(35, 130) * 60
         scheduled = self._move_timestamp_into_reason_window(scheduled, "birthday_curiosity", user)
         return {
             "window": self._window_from_delay_minutes(max(5, int((scheduled - now) / 60)), width_minutes=42),

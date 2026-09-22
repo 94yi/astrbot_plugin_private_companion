@@ -13,6 +13,7 @@ from datetime import datetime
 from typing import Any
 
 from .logging_util import get_module_logger
+from .proactive_engine_shared import _engine_host
 
 logger = get_module_logger(__name__)
 
@@ -32,7 +33,7 @@ class ProactiveEnginePhotoMixin:
             user["photo_generated_today"] = 0
         user["photo_generated_today"] = _safe_int(user.get("photo_generated_today"), 0) + 1
         user["last_generated_photo_path"] = _path_text(image_path, 1000)
-        user["last_generated_photo_at"] = _now_ts()
+        user["last_generated_photo_at"] = _engine_host._now_ts()
 
     def _note_screen_peek_attempt(self, user_id: str, reason: str = "", *, count_daily: bool = True) -> None:
         if not str(user_id or "").strip():
@@ -44,21 +45,21 @@ class ProactiveEnginePhotoMixin:
             user["screen_peek_today"] = 0
         if count_daily:
             user["screen_peek_today"] = _safe_int(user.get("screen_peek_today"), 0) + 1
-        user["screen_peek_last_at"] = _now_ts()
+        user["screen_peek_last_at"] = _engine_host._now_ts()
         user["last_screen_peek_reason"] = _single_line(reason, 120)
         if not count_daily:
-            user["last_unanswered_screen_peek_at"] = _now_ts()
+            user["last_unanswered_screen_peek_at"] = _engine_host._now_ts()
 
     def _screen_peek_failure_cooldown_active(self, user: dict[str, Any] | None = None, *, now: float | None = None) -> bool:
         if not isinstance(user, dict):
             return False
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         return _safe_float(user.get("screen_peek_failure_until"), 0.0) > check_now
 
     def _note_screen_peek_failure(self, user: dict[str, Any] | None, reason: str = "", *, cooldown_minutes: int = 60) -> None:
         if not isinstance(user, dict):
             return
-        now = _now_ts()
+        now = _engine_host._now_ts()
         user["screen_peek_failure_until"] = now + max(5, _safe_int(cooldown_minutes, 60, 5)) * 60
         user["screen_peek_failure_reason"] = _single_line(reason, 180)
         user["screen_peek_failure_count"] = _safe_int(user.get("screen_peek_failure_count"), 0, 0) + 1
@@ -182,7 +183,7 @@ class ProactiveEnginePhotoMixin:
                 runtime_persona_setting(self, "screen_peek_cooldown_minutes", 240),
             ) * 60
             last_at = _safe_float(user.get("screen_peek_last_at"), 0.0)
-            if cooldown_seconds > 0 and last_at > 0 and _now_ts() - last_at < cooldown_seconds:
+            if cooldown_seconds > 0 and last_at > 0 and _engine_host._now_ts() - last_at < cooldown_seconds:
                 return False
         try:
             plugin = self._get_screen_companion_plugin()

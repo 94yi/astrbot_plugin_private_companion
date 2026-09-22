@@ -5,6 +5,7 @@
 方法体零改动：所有 self.xxx 依赖通过继承链解析（宿主类 ProactiveEngineMixin）。
 """
 from __future__ import annotations
+from .proactive_engine_shared import _engine_host
 
 import hashlib
 import random
@@ -40,7 +41,7 @@ class ProactiveEngineMoodMixin:
         """Follow up only on a clearly negative user-state residue from yesterday."""
         if self._private_user_role(user) != "owner":
             return None
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         summary = self.data.get("yesterday_conversation_summary", {})
         if (
             not isinstance(summary, dict)
@@ -84,10 +85,10 @@ class ProactiveEngineMoodMixin:
         if last_sent > 0 and check_now - last_sent < MOOD_CHECKIN_MIN_SILENCE_SECONDS:
             return None
         user["mood_checkin_checked_key"] = check_key
-        if random.random() > MOOD_CHECKIN_PROBABILITY:
+        if _engine_host.random.random() > MOOD_CHECKIN_PROBABILITY:
             return None
         scheduled = self._move_timestamp_into_reason_window(
-            check_now + random.randint(25, 110) * 60,
+            check_now + _engine_host.random.randint(25, 110) * 60,
             "mood_checkin",
             user,
         )
@@ -139,10 +140,10 @@ class ProactiveEngineMoodMixin:
         if last_sent > 0 and now - last_sent < MEMORY_ECHO_MIN_SILENCE_SECONDS:
             return None
         user["memory_echo_checked_key"] = echo_key
-        if random.random() > 0.18:
+        if _engine_host.random.random() > 0.18:
             return None
         scheduled = self._move_timestamp_into_reason_window(
-            now + random.randint(45, 180) * 60,
+            now + _engine_host.random.randint(45, 180) * 60,
             "memory_echo",
             user,
         )
@@ -182,7 +183,7 @@ class ProactiveEngineMoodMixin:
         """Build a low-frequency echo grounded in yesterday's owner-private summary."""
         if self._private_user_role(user) != "owner":
             return None
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         corrected_echo = ProactiveEngineMoodMixin._pick_corrected_memory_echo_event(
             self,
             user,
@@ -233,7 +234,7 @@ class ProactiveEngineMoodMixin:
         if last_sent > 0 and check_now - last_sent < MEMORY_ECHO_MIN_SILENCE_SECONDS:
             return None
         user["memory_echo_checked_key"] = echo_key
-        if random.random() > MEMORY_ECHO_PROBABILITY:
+        if _engine_host.random.random() > MEMORY_ECHO_PROBABILITY:
             return None
         strength_rank = {"强": 3, "中": 2, "轻": 1}
         residue = max(
@@ -243,7 +244,7 @@ class ProactiveEngineMoodMixin:
         residue_text = _single_line(residue.get("content"), 140)
         residue_type = _single_line(residue.get("type"), 24) or "聊天余韵"
         scheduled = self._move_timestamp_into_reason_window(
-            check_now + random.randint(35, 150) * 60,
+            check_now + _engine_host.random.randint(35, 150) * 60,
             "memory_echo",
             user,
         )
@@ -280,7 +281,7 @@ class ProactiveEngineMoodMixin:
         """Express one low-pressure miss when silence is not an ignored bot message."""
         if self._private_user_role(user) != "owner":
             return None
-        check_now = _now_ts() if now is None else now
+        check_now = _engine_host._now_ts() if now is None else now
         last_user_at = _safe_float(user.get("last_user_message_at"), 0)
         if last_user_at <= 0:
             return None
@@ -309,10 +310,10 @@ class ProactiveEngineMoodMixin:
         }:
             return None
         user["absence_miss_checked_key"] = episode_key
-        if random.random() > ABSENCE_MISS_PROBABILITY:
+        if _engine_host.random.random() > ABSENCE_MISS_PROBABILITY:
             return None
         scheduled = self._move_timestamp_into_reason_window(
-            check_now + random.randint(20, 100) * 60,
+            check_now + _engine_host.random.randint(20, 100) * 60,
             "absence_miss",
             user,
         )
