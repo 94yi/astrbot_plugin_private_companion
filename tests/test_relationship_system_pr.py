@@ -79,18 +79,29 @@ def _single_line(value: Any, limit: int = 80) -> str:
 
 
 def _class_method(filename: str, class_name: str, method_name: str, namespace: dict[str, Any]) -> Any:
-    path = ROOT / filename
-    tree = ast.parse(path.read_text(encoding="utf-8"))
-    owner = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == class_name)
-    method = next(
-        node
-        for node in owner.body
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == method_name
+    # 拆分后方法可能已搬离宿主到 page_api_*.py 的 mixin，按方法名跨域定位
+    # （沿 tests/test_page_api_incremental_persistence._function_anywhere 的先例）。
+    sources: list[Path] = [ROOT / filename]
+    for p in sorted(ROOT.glob("page_api_*.py")):
+        if p != sources[0]:
+            sources.append(p)
+    for path in sources:
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (OSError, SyntaxError):
+            continue
+        for owner in ast.walk(tree):
+            if not isinstance(owner, ast.ClassDef):
+                continue
+            for sub in owner.body:
+                if isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef)) and sub.name == method_name:
+                    module = ast.Module(body=[copy.deepcopy(sub)], type_ignores=[])
+                    ast.fix_missing_locations(module)
+                    exec(compile(module, str(path), "exec"), namespace)
+                    return namespace[method_name]
+    raise AssertionError(
+        f"method {method_name!r} not found in {filename} or any page_api_*.py mixin"
     )
-    module = ast.Module(body=[copy.deepcopy(method)], type_ignores=[])
-    ast.fix_missing_locations(module)
-    exec(compile(module, str(path), "exec"), namespace)
-    return namespace[method_name]
 
 
 NOW = 1_700_000_000.0
