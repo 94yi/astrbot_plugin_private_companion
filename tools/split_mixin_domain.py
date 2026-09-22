@@ -346,6 +346,25 @@ def main() -> int:
 
     lines = read_lines(host_path)
 
+    def docstring_end(node: ast.AST) -> int:
+        """方法体内 docstring 的结束行号（若无 docstring 返回 def 行号）。
+
+        前导 `#` 注释可能是**方法自身 docstring 的正文**被错误重排到 `def`
+        之前的结果（上游大量方法如此）。只有「docstring 未被前导注释块完整
+        覆盖」时，那些注释才真正属于本方法 —— 否则回退会导致注释被复制两遍。
+        """
+        body = getattr(node, "body", None) or []
+        if not body:
+            return node.lineno
+        first = body[0]
+        if (
+            isinstance(first, ast.Expr)
+            and isinstance(first.value, ast.Constant)
+            and isinstance(first.value.value, str)
+        ):
+            return first.end_lineno
+        return node.lineno
+
     def span_of(node: ast.AST) -> tuple[int, int]:
         start = node.lineno
         decorators = getattr(node, "decorator_list", None) or ()
@@ -353,7 +372,10 @@ def main() -> int:
             start = min(start, min(d.lineno for d in decorators))
         # 向上吸收紧邻的前导注释块（连续 `#` 行）：注释在语义上属于该成员，
         # 若只按 lineno 切片会把它留在宿主里形成"孤儿注释"（实测会发生）。
-        while start - 2 >= 0:
+        # 只吸收「顶到 docstring 或装饰器为止」的块：再多就会吃掉上一个成员
+        # 的尾部空行/注释边界。
+        floor = docstring_end(node)
+        while start - 2 >= 0 and start - 1 > floor:
             prev = lines[start - 2].strip()
             if prev.startswith(b"#"):
                 start -= 1
