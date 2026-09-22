@@ -23,18 +23,23 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def _llm_tool_functions() -> dict[str, ast.AsyncFunctionDef]:
-    source = (ROOT / "main.py").read_text(encoding="utf-8")
-    tree = ast.parse(source)
+    # llm_tool 注册函数经拆分分布在 main.py 与 main_*.py 域 mixin，跨宿主族聚合扫描。
+    sources = [ROOT / "main.py", *sorted(ROOT.glob("main_*.py"))]
     tools: dict[str, ast.AsyncFunctionDef] = {}
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.AsyncFunctionDef):
+    for path in sources:
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        except (OSError, SyntaxError):
             continue
-        for decorator in node.decorator_list:
-            if not isinstance(decorator, ast.Call):
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.AsyncFunctionDef):
                 continue
-            target = decorator.func
-            if isinstance(target, ast.Attribute) and target.attr == "llm_tool":
-                tools[node.name] = node
+            for decorator in node.decorator_list:
+                if not isinstance(decorator, ast.Call):
+                    continue
+                target = decorator.func
+                if isinstance(target, ast.Attribute) and target.attr == "llm_tool":
+                    tools[node.name] = node
     return tools
 
 
