@@ -33,6 +33,8 @@ logger = get_module_logger(__name__)
 
 
 
+
+
 # ---- 宿主全局转发层（由 tmp/refactor/autofix_domain_globals.py 生成）----
 # ==== 需真实对象（isinstance/下标/继承）：复制宿主的 import 语句 ====
 try:

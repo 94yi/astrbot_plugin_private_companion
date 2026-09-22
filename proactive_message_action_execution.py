@@ -34,6 +34,8 @@ logger = get_module_logger(__name__)
 
 
 
+
+
 # ---- 宿主全局转发层（由 tmp/refactor/autofix_domain_globals.py 生成）----
 # ==== 需实时转发（可被 patch）：同名函数转发宿主 ====
 def _now_ts(*args, **kwargs):
