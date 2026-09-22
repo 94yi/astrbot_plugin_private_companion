@@ -375,7 +375,7 @@ class Req028ExpressionContractTests(unittest.TestCase):
         self.assertEqual("expression_contact_boundary", preflight(host, {"sent_today": 0}, now=100.0))
 
     def test_page_dto_marks_legacy_relationship_state_read_only(self) -> None:
-        page_source = (ROOT / "page_api.py").read_text(encoding="utf-8")
+        page_source = "".join((ROOT / p).read_text(encoding="utf-8") for p in ["page_api.py", *sorted(ROOT.glob("page_api_*.py"))])
         users_source = (ROOT / "page_api_users_groups.py").read_text(encoding="utf-8")
 
         self.assertIn('"current_interaction": interaction', page_source)

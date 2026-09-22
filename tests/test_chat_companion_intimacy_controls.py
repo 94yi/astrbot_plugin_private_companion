@@ -16,15 +16,20 @@ from relationship_policy import relationship_stage_for_score
 
 
 def _class_method(path: Path, class_name: str, method_name: str) -> ast.FunctionDef | ast.AsyncFunctionDef:
-    tree = ast.parse(path.read_text(encoding="utf-8"))
-    owner = next(
-        node for node in tree.body
-        if isinstance(node, ast.ClassDef) and node.name == class_name
-    )
-    return deepcopy(next(
-        node for node in owner.body
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == method_name
-    ))
+    for src in [path, *(p for p in sorted(ROOT.glob("page_api_*.py")) if p != path)]:
+        try:
+            tree = ast.parse(src.read_text(encoding="utf-8"))
+        except (OSError, SyntaxError):
+            continue
+        for owner in tree.body:
+            if not isinstance(owner, ast.ClassDef):
+                continue
+            try:
+                return deepcopy(next(node for node in owner.body
+                    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == method_name))
+            except StopIteration:
+                continue
+    raise AssertionError(f"method not found in page_api family: {method_name}")
 
 
 def _compile_static_method(path: Path, class_name: str, method_name: str) -> object:

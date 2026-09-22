@@ -165,6 +165,7 @@ from .reaction_asset_library import get_reaction_asset_library
 from .logging_util import get_module_logger
 from .page_api_calendar_daily import PrivateCompanionPageApiCalendarDailyMixin
 from .page_api_creative import PrivateCompanionPageApiCreativeMixin
+from .page_api_creative import _render_page_background_prompt, _render_page_background_prompt_pair  # noqa: F401 (兼容 page_api._render_page_background_prompt* 旧命名空间)
 from .page_api_summary_panel import PrivateCompanionPageApiSummaryPanelMixin
 from .page_api_bookshelf import PrivateCompanionPageApiBookshelfMixin
 from .page_api_bookshelf import BOOKSHELF_ACCESS_TOKEN_MAX_PERSISTED, BOOKSHELF_ACCESS_TOKEN_TTL_SECONDS  # noqa: F401 (兼容 from page_api import BOOKSHELF_*)

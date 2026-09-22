@@ -106,7 +106,7 @@ class EmotionE8ExpressionDimensionTests(unittest.TestCase):
             self.assertIn(f"{label}={decision[key]}", prompt)
         self.assertLess(len(prompt), 620)
 
-        page_source = (ROOT / "page_api.py").read_text(encoding="utf-8")
+        page_source = "".join((ROOT / p).read_text(encoding="utf-8") for p in ["page_api.py", *sorted(ROOT.glob("page_api_*.py"))])
         for key, fallback in {
             "pacing": "steady",
             "directness": "natural",

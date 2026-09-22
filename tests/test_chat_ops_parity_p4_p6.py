@@ -498,9 +498,18 @@ class P4P6ParityTests(unittest.TestCase):
         self.assertEqual({"schema_version", "source_plugin", "contract_fingerprint", "health", "reason_code", "counts"}, set(projection))
 
     def test_relationship_panel_source_cannot_return_sensitive_contract_fields(self) -> None:
-        source = (ROOT / "page_api.py").read_text(encoding="utf-8")
-        tree = ast.parse(source)
-        function = next(node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef) and node.name == "_relationship_panel")
+        function = None
+        for path in [ROOT / "page_api.py", *sorted(ROOT.glob("page_api_*.py"))]:
+            try:
+                tree = ast.parse(path.read_text(encoding="utf-8"))
+            except (OSError, SyntaxError):
+                continue
+            try:
+                function = next(node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef) and node.name == "_relationship_panel")
+            except StopIteration:
+                continue
+            break
+        self.assertIsNotNone(function, "_relationship_panel not found in page_api family")
         string_constants = {node.value for node in ast.walk(function) if isinstance(node, ast.Constant) and type(node.value) is str}
         forbidden = {"person_id", "p4_effect", "p4_live", "attestation", "raw_prompt", "memory_content", "group_overlay"}
         self.assertTrue(forbidden.isdisjoint(string_constants))

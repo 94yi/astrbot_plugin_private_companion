@@ -941,7 +941,7 @@ class ConfigGroupAuthorityTests(unittest.TestCase):
 
     def test_removed_owner_companion_switch_stays_absent(self):
         source = (ROOT / "plugin_bootstrap.py").read_text(encoding="utf-8")
-        page_api = (ROOT / "page_api.py").read_text(encoding="utf-8")
+        page_api = "".join((ROOT / p).read_text(encoding="utf-8") for p in ["page_api.py", *sorted(ROOT.glob("page_api_*.py"))])
         self.assertNotIn("owner_companion_enabled", source)
         self.assertNotIn('"owner_companion_enabled"', page_api)
         self.assertIn(
