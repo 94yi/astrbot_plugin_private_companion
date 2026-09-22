@@ -124,25 +124,33 @@ def _literal(node: ast.AST) -> object:
         return None
 
 
+def _page_api_family_sources() -> list[str]:
+    """page_api 宿主与全部域 mixin 模块源码（拆分后路由表可能位于任一域模块）。"""
+    return [
+        path.read_text(encoding="utf-8")
+        for path in sorted(ROOT.glob("page_api*.py"))
+    ]
+
+
 def _qzone_routes() -> list[tuple[str, str, str]]:
-    tree = _parse(ROOT / "page_api.py")
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Assign) or not isinstance(node.value, ast.List):
-            continue
-        if not any(isinstance(target, ast.Name) and target.id == "routes" for target in node.targets):
-            continue
-        routes: list[tuple[str, str, str]] = []
-        for item in node.value.elts:
-            if not isinstance(item, ast.Tuple) or len(item.elts) < 3:
+    routes: list[tuple[str, str, str]] = []
+    for source in _page_api_family_sources():
+        tree = ast.parse(source)
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Assign) or not isinstance(node.value, ast.List):
                 continue
-            path, handler, methods = item.elts[:3]
-            path_value = _literal(path)
-            handler_name = handler.attr if isinstance(handler, ast.Attribute) else None
-            method_values = _literal(methods)
-            if isinstance(path_value, str) and path_value.startswith("/qzone/") and handler_name and isinstance(method_values, list):
-                routes.extend((path_value, handler_name, str(method)) for method in method_values)
-        return routes
-    return []
+            if not any(isinstance(target, ast.Name) and target.id == "routes" for target in node.targets):
+                continue
+            for item in node.value.elts:
+                if not isinstance(item, ast.Tuple) or len(item.elts) < 3:
+                    continue
+                path, handler, methods = item.elts[:3]
+                path_value = _literal(path)
+                handler_name = handler.attr if isinstance(handler, ast.Attribute) else None
+                method_values = _literal(methods)
+                if isinstance(path_value, str) and path_value.startswith("/qzone/") and handler_name and isinstance(method_values, list):
+                    routes.extend((path_value, handler_name, str(method)) for method in method_values)
+    return routes
 
 
 def _llm_tool_names() -> set[str]:
@@ -260,14 +268,13 @@ class C6CapabilityMatrixTests(unittest.TestCase):
             "command_handlers.py",
             "extension_api_relationship.py",
             "news_exploration.py",
-            "page_api.py",
             "private_image.py",
             "reading_archive.py",
             "group_member_safety.py",
             "group_wakeup.py",
             "atrelay.py",
             "tts_enhancement.py",
-        )
+        ) + "\n".join(_page_api_family_sources())
         markers = {
             "QQ space": ("qzone", "QZONE_COOKIE"),
             "news": ("news", "NEWS_PROVIDER_ID"),

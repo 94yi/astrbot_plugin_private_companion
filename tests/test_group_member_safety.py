@@ -665,7 +665,10 @@ class GroupMemberSafetySourceIntegrationTests(unittest.TestCase):
 
     def test_backend_routes_config_and_third_level_page_are_connected(self) -> None:
         main_source = (ROOT / "main.py").read_text(encoding="utf-8")
-        api_source = (ROOT / "page_api.py").read_text(encoding="utf-8")
+        api_source = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted(ROOT.glob("page_api*.py"))
+        )
         script = (ROOT / "pages" / "陪伴面板" / "app.js").read_text(encoding="utf-8")
         schema = json.loads((ROOT / "_conf_schema.json").read_text(encoding="utf-8"))
 

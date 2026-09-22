@@ -206,7 +206,7 @@ class PageApiIncrementalPersistenceTests(unittest.TestCase):
         }
         for function_name, sections in expected.items():
             with self.subTest(function=function_name):
-                source = ast.unparse(_function(PAGE_API, function_name))
+                source = ast.unparse(_function_anywhere(function_name))
                 self.assertNotIn("data_payload", source)
                 for section in sections:
                     self.assertIn(repr(section), source)

@@ -25,10 +25,10 @@ from .relationship_policy import (
 from .runtime_config_dispatcher import TTS_RUNTIME_KEYS
 from .story_authority import StoryAuthorityError, story_authority_controller
 from copy import deepcopy
-from quart import request
 from typing import Any
 
 from .logging_util import get_module_logger
+from .page_api_shared import _page_api_host
 
 logger = get_module_logger(__name__)
 
@@ -298,7 +298,7 @@ class PrivateCompanionPageApiConfigMixin:
         )
 
     async def update_settings(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
+        payload = await _page_api_host.request.get_json(silent=True) or {}
         mode_transition_snapshot: dict[str, Any] = {}
         mode_transition_committed = False
         story_authority_identity: Any | None = None
@@ -608,7 +608,7 @@ class PrivateCompanionPageApiConfigMixin:
 
     async def apply_setup_guide(self) -> dict[str, Any]:
         """Persist the first setup guide draft into plugin config and data."""
-        payload = await request.get_json(silent=True) or {}
+        payload = await _page_api_host.request.get_json(silent=True) or {}
         draft = payload.get("draft") if isinstance(payload.get("draft"), dict) else payload
         if not isinstance(draft, dict):
             return self._error("缺少首次配置草稿")

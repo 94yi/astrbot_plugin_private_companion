@@ -144,7 +144,10 @@ class OwnedReactionToolAndPanelContractTests(unittest.TestCase):
         self.assertIn("or internal_attachment", source)
 
     def test_panel_is_id_only_and_routes_are_read_only(self) -> None:
-        api_source = (ROOT / "page_api.py").read_text(encoding="utf-8")
+        api_source = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted(ROOT.glob("page_api*.py"))
+        )
         panel_source = (ROOT / "pages" / "陪伴面板" / "app.js").read_text(encoding="utf-8")
         routes = {
             (node.elts[0].value, node.elts[2].elts[0].value)
