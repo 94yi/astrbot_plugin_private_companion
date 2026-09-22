@@ -23,14 +23,34 @@ from companion_interaction_expression import (  # noqa: E402
 
 
 def _class_method(filename: str, class_name: str, method_name: str, namespace: dict[str, Any]):
+    # daily_state.py 已按域拆分，方法体可能落在 daily_state_*.py。
+    # 先按原路径找，找不到再扫同族域模块（module_source_index），断言语义不变。
     source = (ROOT / filename).read_text(encoding="utf-8")
     tree = ast.parse(source)
-    owner = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == class_name)
-    method = next(
-        node
-        for node in owner.body
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == method_name
+    owner = next(
+        (node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == class_name),
+        None,
     )
+    method = None
+    if owner is not None:
+        method = next(
+            (
+                node
+                for node in owner.body
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == method_name
+            ),
+            None,
+        )
+    if method is None:
+        sys.path.insert(0, str(ROOT / "tests"))
+        from module_source_index import find_method
+
+        host = Path(filename).stem
+        method = find_method(ROOT, host, class_name, method_name)
+        if method is None:
+            raise StopIteration(
+                f"{method_name} 未在 {filename} 及其域模块中找到"
+            )
     module = ast.Module(
         body=[ast.ImportFrom(module="__future__", names=[ast.alias(name="annotations")], level=0), method],
         type_ignores=[],

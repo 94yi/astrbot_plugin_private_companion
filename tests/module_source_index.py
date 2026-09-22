@@ -35,6 +35,11 @@ from typing import Iterable, Iterator
 _HOST_SCOPE = {
     "main": ("main.py", "main_*.py"),
     "page_api": ("page_api.py", "page_api_*.py"),
+    "daily_state": ("daily_state.py", "daily_state_*.py"),
+    "proactive_message": ("proactive_message.py", "proactive_message_*.py"),
+    "proactive_engine": ("proactive_engine.py", "proactive_engine_*.py"),
+    "message_pipeline": ("message_pipeline.py", "message_pipeline_*.py"),
+    "content_companion": ("content_companion.py", "content_companion_*.py"),
 }
 
 
@@ -80,6 +85,26 @@ def main_sources(root: Path) -> list[Path]:
 
 def page_api_sources(root: Path) -> list[Path]:
     return host_sources(root, "page_api")
+
+
+def daily_state_sources(root: Path) -> list[Path]:
+    return host_sources(root, "daily_state")
+
+
+def proactive_message_sources(root: Path) -> list[Path]:
+    return host_sources(root, "proactive_message")
+
+
+def proactive_engine_sources(root: Path) -> list[Path]:
+    return host_sources(root, "proactive_engine")
+
+
+def message_pipeline_sources(root: Path) -> list[Path]:
+    return host_sources(root, "message_pipeline")
+
+
+def content_companion_sources(root: Path) -> list[Path]:
+    return host_sources(root, "content_companion")
 
 
 def iter_module_sources(root: Path, host: str = "main") -> Iterator[tuple[Path, ast.Module]]:
@@ -228,3 +253,18 @@ def main_source_text(root: Path) -> str:
 def page_api_source_text(root: Path) -> str:
     """``host_source_text(root, "page_api")`` 的便捷别名。"""
     return host_source_text(root, "page_api")
+
+
+def daily_state_source_text(root: Path) -> str:
+    """``host_source_text(root, "daily_state")`` 的便捷别名。"""
+    return host_source_text(root, "daily_state")
+
+
+def proactive_message_source_text(root: Path) -> str:
+    """``host_source_text(root, "proactive_message")`` 的便捷别名。"""
+    return host_source_text(root, "proactive_message")
+
+
+def proactive_engine_source_text(root: Path) -> str:
+    """``host_source_text(root, "proactive_engine")`` 的便捷别名。"""
+    return host_source_text(root, "proactive_engine")
