@@ -83,6 +83,7 @@ class PrivateCompanionPluginPromptFormattingMixin:
         event: AstrMessageEvent | None,
         req: ProviderRequest | None = None,
     ) -> str:
+        from .main import PrivateCompanionPlugin  # 惰性导入避免循环；运行时 main 已完成初始化
         section = PrivateCompanionPlugin._format_technical_reasoning_prompt_section(event, req)
         if section is None:
             return ""

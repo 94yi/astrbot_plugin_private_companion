@@ -17,6 +17,13 @@ import threading
 from types import ModuleType
 from typing import Any
 import contextvars
+import base64
+from pathlib import Path
+
+try:
+    from astrbot.api.message_components import BaseMessageComponent, ComponentType
+except ImportError:
+    from astrbot.core.message.components import BaseMessageComponent, ComponentType
 from .persona_config import load_scope_manifest
 
 _PRIVATE_COMPANION_RUNTIME_KEY = "ASTROBOT_PRIVATE_COMPANION_RUNTIME"
@@ -206,3 +213,37 @@ _WINDOWS_RESERVED_FILENAME_STEMS = frozenset(
         *(f"LPT{index}" for index in range(1, 10)),
     }
 )
+
+class _OneBotReactionImage(BaseMessageComponent):
+    """OneBot image segment that preserves QQ's emoji-image subtype flag."""
+
+    type: ComponentType = ComponentType.Image
+    file: str
+    path: str
+    url: str = ""
+    sub_type: int = 1
+    payload_file: str
+    _private_companion_reaction_expression = True
+
+    def __init__(self, path: str) -> None:
+        resolved = str(Path(path).resolve(strict=True))
+        payload = base64.b64encode(Path(resolved).read_bytes()).decode("ascii")
+        super().__init__(
+            file=resolved,
+            path=resolved,
+            url="",
+            sub_type=1,
+            payload_file=f"base64://{payload}",
+        )
+
+    def toDict(self) -> dict[str, Any]:
+        return {
+            "type": "image",
+            "data": {"file": self.payload_file, "sub_type": self.sub_type},
+        }
+
+    async def to_dict(self) -> dict[str, Any]:
+        return self.toDict()
+
+    def __repr__(self) -> str:
+        return f"_OneBotReactionImage(path={self.path!r}, sub_type={self.sub_type})"
