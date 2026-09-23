@@ -39,7 +39,12 @@ class OutboxLifecycleTests(unittest.TestCase):
 
 class CompanionConcurrencyStaticTests(unittest.TestCase):
     def test_data_lock_external_awaits_use_temporary_release_context(self):
-        main_source = (ROOT / "main.py").read_text(encoding="utf-8")
+        # _temporarily_release_data_lock 已随 main.py 拆分迁至 main_lifecycle.py，
+        # 跨宿主族聚合源码断言（86ebc90 范本）。
+        main_source = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in [ROOT / "main.py", *sorted(ROOT.glob("main_*.py"))]
+        )
         pipeline_source = (ROOT / "message_pipeline.py").read_text(encoding="utf-8")
         self.assertIn("async def _temporarily_release_data_lock", main_source)
         # Official v6.0.4b moves passive handlers into message_pipeline.py.
