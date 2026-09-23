@@ -737,18 +737,34 @@ class Req036CompanionTests(unittest.TestCase):
         self.assertNotIn("content", repr(user["unified_profile_capability_audit"]))
 
     def test_req039_group_path_uses_transient_projection_without_private_user_write(self) -> None:
-        source = (ROOT / "main.py").read_text(encoding="utf-8")
-        tree = ast.parse(source)
-        plugin = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "PrivateCompanionPlugin")
-        capture = next(node for node in plugin.body if isinstance(node, ast.AsyncFunctionDef) and node.name == "_capture_group_observation_event")
+        # gic 域拆分后目标方法分布到 main.py 与 main_*.py 域 mixin，跨宿主族聚合扫描（19a389c 范本）。
+        def _family_method(name: str, kind: type) -> ast.AST:
+            for path in [ROOT / "main.py", *sorted(ROOT.glob("main_*.py"))]:
+                if not path.is_file():
+                    continue
+                tree = ast.parse(path.read_text(encoding="utf-8"), filename=path.name)
+                for node in tree.body:
+                    if not isinstance(node, ast.ClassDef):
+                        continue
+                    if node.name != "PrivateCompanionPlugin" and not node.name.startswith("PrivateCompanionPlugin"):
+                        continue
+                    method = next(
+                        (sub for sub in node.body if isinstance(sub, kind) and sub.name == name),
+                        None,
+                    )
+                    if method is not None:
+                        return method
+            raise RuntimeError(f"未在 main.py / main_*.py 中定位 {name}")
+
+        capture = _family_method("_capture_group_observation_event", ast.AsyncFunctionDef)
         rendered = ast.unparse(capture)
         self.assertNotIn("_get_user", rendered)
         self.assertNotIn("group_inbound", rendered)
-        projection = next(node for node in plugin.body if isinstance(node, ast.FunctionDef) and node.name == "_req039_group_observation_projection")
+        projection = _family_method("_req039_group_observation_projection", ast.FunctionDef)
         projection_rendered = ast.unparse(projection)
         self.assertNotIn("_get_user", projection_rendered)
         self.assertIn("'projection_kind': 'group_observation'", projection_rendered)
-        expression = next(node for node in plugin.body if isinstance(node, ast.AsyncFunctionDef) and node.name == "inject_unified_relationship_expression")
+        expression = _family_method("inject_unified_relationship_expression", ast.AsyncFunctionDef)
         expression_rendered = ast.unparse(expression)
         self.assertIn("group_id = '' if is_private", expression_rendered)
         self.assertIn("_req039_group_observation_projection", expression_rendered)
