@@ -443,6 +443,7 @@ from .platform_compat import PlatformCompatibilityMixin
 from .integration_status import IntegrationStatusMixin
 from .astrbot_knowledge import AstrBotKnowledgeMixin
 from .atrelay import AtRelayMixin
+from .main_util_small import PrivateCompanionPluginUtilSmallMixin
 from .main_proactive_only_unlock import PrivateCompanionPluginProactiveOnlyUnlockMixin
 from .main_lifecycle import PrivateCompanionPluginLifecycleMixin
 from .main_reaction_expression import PrivateCompanionPluginReactionExpressionMixin
@@ -1624,6 +1625,7 @@ class PrivateCompanionPlugin(
     NewsExplorationMixin,
     SelfTimelineMixin,
     AtRelayMixin,
+    PrivateCompanionPluginUtilSmallMixin,
     PrivateCompanionPluginProactiveOnlyUnlockMixin,
     PrivateCompanionPluginLifecycleMixin,
     PrivateCompanionPluginReactionExpressionMixin,
@@ -2327,10 +2329,6 @@ class PrivateCompanionPlugin(
                 pass
         return path
 
-
-    @staticmethod
-    async def _await_if_needed(value: Any) -> Any:
-        return await value if inspect.isawaitable(value) else value
 
     def _astrbot_persona_exists(self, persona_id: Any) -> bool:
         pid = self._sanitize_persona_id(persona_id)
@@ -7914,62 +7912,6 @@ class PrivateCompanionPlugin(
                     names.append(name)
         return names
 
-    @staticmethod
-    def _safe_event_sender_id(event: AstrMessageEvent | None) -> str:
-        if event is None:
-            return ""
-        getter = getattr(event, "get_sender_id", None)
-        if callable(getter):
-            try:
-                return _single_line(getter(), 80)
-            except Exception:
-                pass
-        return _single_line(getattr(event, "sender_id", "") or getattr(event, "user_id", ""), 80)
-
-    @staticmethod
-    def _safe_event_is_private(event: AstrMessageEvent | None) -> bool:
-        if event is None:
-            return False
-        unified_msg_origin = str(getattr(event, "unified_msg_origin", "") or "")
-        try:
-            if bool(getattr(event, "is_private_chat", lambda: False)()):
-                return True
-        except Exception:
-            pass
-        return ":FriendMessage:" in unified_msg_origin
-
-    def _is_owner_private_event(self, event: AstrMessageEvent | None) -> bool:
-        if event is None:
-            return False
-        if not self._safe_event_is_private(event):
-            return False
-        try:
-            resolver = getattr(self, "_private_user_id_for_event", None)
-            requester_id = (
-                resolver(event)
-                if callable(resolver)
-                else self._canonical_private_user_id(self._safe_event_sender_id(event))
-            )
-        except Exception:
-            requester_id = ""
-        if not requester_id:
-            return False
-        requester_profile = None
-        try:
-            requester_profile = self._get_user(requester_id)
-        except Exception:
-            users = self.data.get("users") if isinstance(getattr(self, "data", {}), dict) and isinstance(self.data.get("users"), dict) else {}
-            requester_profile = users.get(requester_id) if isinstance(users, dict) else None
-        try:
-            return (
-                bool(requester_id and self._is_target_private_user(requester_id, requester_profile if isinstance(requester_profile, dict) else None))
-                and isinstance(requester_profile, dict)
-                and bool(requester_profile.get("enabled", True))
-                and self._private_user_role(requester_profile, requester_id) == "owner"
-            )
-        except Exception:
-            return False
-
     @filter.on_llm_request(priority=220000)
     @_multi_persona_event_context
     async def guard_req036_private_capability_before_llm(
@@ -10322,31 +10264,4 @@ class PrivateCompanionPlugin(
     async def on_group_message(self, event: AstrMessageEvent, *args, **kwargs):
         await _mark_hdsi_inbound(self, event)
         return await handle_group_message(self, event, *args, **kwargs)
-
-    def _format_timestamp_elapsed(self, timestamp: Any) -> str:
-        ts = _safe_float(timestamp, 0)
-        if ts <= 0:
-            return "从未"
-        delta = _now_ts() - ts
-        if delta < -5:
-            seconds = abs(delta)
-            if seconds < 60:
-                return f"{max(1, int(seconds))} 秒后"
-            if seconds < 3600:
-                return f"{max(1, int(seconds // 60))} 分钟后"
-            if seconds < 86400:
-                return f"{max(1, int(seconds // 3600))} 小时后"
-            return f"{max(1, int(seconds // 86400))} 天后"
-        seconds = max(0, delta)
-        return self._format_elapsed(seconds)
-
-    def _format_elapsed(self, seconds: float) -> str:
-        if seconds < 5:
-            return "刚刚"
-        if seconds < 60:
-            return f"{int(seconds)} 秒前"
-        if seconds < 3600:
-            return f"{int(seconds // 60)} 分钟前"
-        if seconds < 86400:
-            return f"{int(seconds // 3600)} 小时前"
-        return f"{int(seconds // 86400)} 天前"
+
