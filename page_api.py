@@ -175,6 +175,14 @@ from .page_api_bookshelf import PrivateCompanionPageApiBookshelfMixin
 from .page_api_bookshelf import BOOKSHELF_ACCESS_TOKEN_MAX_PERSISTED, BOOKSHELF_ACCESS_TOKEN_TTL_SECONDS  # noqa: F401 (兼容 from page_api import BOOKSHELF_*)
 from .page_api_tts import PrivateCompanionPageApiTtsMixin
 from .page_api_config import PrivateCompanionPageApiConfigMixin
+from .page_api_daily_review import PrivateCompanionPageApiDailyReviewMixin
+from .page_api_bookshelf_remaining import PrivateCompanionPageApiBookshelfRemainingMixin
+from .page_api_reality_touch import PrivateCompanionPageApiRealityTouchMixin
+from .page_api_message_display import PrivateCompanionPageApiMessageDisplayMixin
+from .page_api_util_small import PrivateCompanionPageApiUtilSmallMixin
+from .page_api_wardrobe_page import PrivateCompanionPageApiWardrobePageMixin
+from .page_api_plugin_meta import PrivateCompanionPageApiPluginMetaMixin
+from .page_api_config_runtime import PrivateCompanionPageApiConfigRuntimeMixin
 from .page_backend import MigrationBackupService, build_route_bindings, generation_log_candidates
 from .task_prompt_registry import (
     TASK_PROMPT_CONFIG_KEY,
@@ -322,6 +330,14 @@ class PrivateCompanionPageApi(
     PrivateCompanionPageApiFoodBodyMixin,
     PrivateCompanionPageApiSocialGroupMixin,
     PrivateCompanionPageApiAdminTokenMixin,
+    PrivateCompanionPageApiDailyReviewMixin,
+    PrivateCompanionPageApiBookshelfRemainingMixin,
+    PrivateCompanionPageApiRealityTouchMixin,
+    PrivateCompanionPageApiMessageDisplayMixin,
+    PrivateCompanionPageApiUtilSmallMixin,
+    PrivateCompanionPageApiWardrobePageMixin,
+    PrivateCompanionPageApiPluginMetaMixin,
+    PrivateCompanionPageApiConfigRuntimeMixin,
 ):
     """AstrBot 官方插件拓展页面 API。"""
 
@@ -1167,89 +1183,12 @@ class PrivateCompanionPageApi(
 
 
 
-    async def preview_wardrobe_outfit(self) -> dict[str, Any]:
-        """Preview what the wardrobe would inject for one occasion.
-
-        Read-only: never writes config and never calls the model, so the panel
-        can refresh it freely while the administrator tunes the settings.
-        """
-
-        payload = await request.get_json(silent=True) or {}
-        if not isinstance(payload, dict):
-            return self._error("请求体必须是 JSON 对象")
-        preview = getattr(self.plugin, "_wardrobe_outfit_preview", None)
-        if not callable(preview):
-            return self._error("当前插件实例不支持着装预览")
-        # 缺省的 scene/weather 表示「用插件自动判定的值」；传空串表示这一轮没有场合上下文。
-        # 场合只写进请求与种子，从不过滤候选，所以这里怎么填都不会藏起某件衣物。
-        raw_scene = payload.get("scene")
-        raw_weather = payload.get("weather")
-        try:
-            data = preview(
-                scene=None if raw_scene is None else self._single_line(raw_scene, 20),
-                weather=None if raw_weather is None else self._single_line(raw_weather, 120),
-                seed=self._single_line(payload.get("seed"), 60),
-            )
-        except Exception as exc:
-            logger.warning("着装预览失败: %s", self._single_line(exc, 160), exc_info=True)
-            return self._error("着装预览失败，请稍后再试")
-        return self._ok(data)
-
-    def _wardrobe_page_local_path(self, value: Any) -> Path | None:
-        """Allow only images already stored in the plugin's own asset directories."""
-
-        path = Path(str(value or "")).expanduser()
-        try:
-            if not path.is_file() or path.suffix.lower() not in {".png", ".jpg", ".jpeg", ".webp"}:
-                return None
-            resolved = path.resolve()
-            data_root = Path(str(getattr(self.plugin, "data_dir", "") or ".")).expanduser().resolve()
-            allowed_roots = (
-                data_root / "photo_reference_images",
-                data_root / "photo_reference_assets",
-            )
-            if not any(resolved == root or root in resolved.parents for root in allowed_roots):
-                return None
-            return resolved
-        except (OSError, ValueError):
-            return None
-
     # 缩略图只服务衣柜素材目录里的位图；单张上限是为了不把 32MB 的原图
     # base64 成 43MB 再塞回浏览器 —— 队列里那一小格图不值得这个带宽。
     WARDROBE_ASSET_IMAGE_MIMES = frozenset({"image/png", "image/jpeg", "image/webp", "image/gif"})
     WARDROBE_ASSET_IMAGE_MAX_BYTES = 8 * 1024 * 1024
 
 
-
-    async def get_wardrobe_intent(self) -> dict[str, Any]:
-        """Read the session outfit intent for the wardrobe panel.
-
-        Read-only: it only asks the plugin for the author's dialogue_outfit_override
-        snapshot, so the panel can show what this session asked the character to wear.
-        """
-
-        reader = getattr(self.plugin, "_wardrobe_intent_snapshot", None)
-        if not callable(reader):
-            return self._error("当前插件实例不支持穿衣意图")
-        try:
-            snapshot = reader()
-        except Exception as exc:
-            logger.warning("穿衣意图读取失败: %s", self._single_line(exc, 160), exc_info=True)
-            return self._error("读取穿衣意图失败，请稍后再试")
-        return self._ok({"intent": snapshot if isinstance(snapshot, dict) else {}})
-
-    async def clear_wardrobe_intent(self) -> dict[str, Any]:
-        """Clear the session outfit intent so the daily rotation takes over again."""
-
-        clearer = getattr(self.plugin, "_wardrobe_clear_intent", None)
-        if not callable(clearer):
-            return self._error("当前插件实例不支持穿衣意图")
-        try:
-            cleared = bool(clearer())
-        except Exception as exc:
-            logger.warning("穿衣意图清除失败: %s", self._single_line(exc, 160), exc_info=True)
-            return self._error("清除穿衣意图失败，请稍后再试")
-        return self._ok({"cleared": cleared})
 
 
 
@@ -1316,114 +1255,6 @@ class PrivateCompanionPageApi(
 
 
 
-    async def get_reality_touch(self) -> dict[str, Any]:
-        bridge_getter = getattr(self.plugin, "_reality_companion_api", None)
-        bridge = bridge_getter() if callable(bridge_getter) else None
-        linked_snapshotter = getattr(bridge, "page_snapshot", None) if bridge is not None else None
-        if callable(linked_snapshotter):
-            try:
-                return self._ok(self._normalize_reality_touch_snapshot(linked_snapshotter()))
-            except Exception as exc:
-                logger.error("获取现实触及联动状态失败: %s", exc, exc_info=True)
-                return self._exception_error("获取现实触及联动状态失败")
-        return self._error(
-            "现实触及已由“我会来到你身边”管理，请先安装并启用 astrbot_plugin_reality_companion。",
-            status_code=503,
-        )
-
-    async def update_reality_touch(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
-        bridge_getter = getattr(self.plugin, "_reality_companion_api", None)
-        bridge = bridge_getter() if callable(bridge_getter) else None
-        linked_action = getattr(bridge, "page_action", None) if bridge is not None else None
-        if callable(linked_action):
-            try:
-                result = await linked_action(payload)
-                if not isinstance(result, dict) or not result.get("ok"):
-                    return self._error(
-                        self._single_line(result.get("message"), 240)
-                        if isinstance(result, dict)
-                        else "现实触及联动操作失败"
-                    )
-                snapshot = result.get("data") if isinstance(result.get("data"), dict) else {}
-                if isinstance(result.get("result"), dict):
-                    snapshot["action_result"] = result["result"]
-                snapshot = self._normalize_reality_touch_snapshot(snapshot)
-                snapshot["message"] = self._single_line(result.get("message"), 240) or "现实触及联动操作已完成"
-                return self._ok(snapshot)
-            except Exception as exc:
-                logger.error("更新现实触及联动失败: %s", exc, exc_info=True)
-                return self._exception_error("更新现实触及联动失败")
-        return self._error(
-            "现实触及已由“我会来到你身边”管理，请先安装并启用 astrbot_plugin_reality_companion。",
-            status_code=503,
-        )
-
-    @staticmethod
-    def _normalize_reality_touch_snapshot(snapshot: Any) -> dict[str, Any]:
-        """Normalize snapshots from old and new Reality Companion bridges.
-
-        Older embedded MiHome snapshots expose auth/login/device fields but do
-        not include the newer ``available`` marker.  Keep an explicit false
-        authoritative while deriving availability from the capability payload
-        when the marker is absent.
-        """
-        normalized = dict(snapshot) if isinstance(snapshot, dict) else {}
-        mihome = normalized.get("mihome")
-        if not isinstance(mihome, dict):
-            return normalized
-        mihome = dict(mihome)
-        if "available" not in mihome:
-            mihome["available"] = any(
-                key in mihome
-                for key in ("auth", "login", "devices", "mappings", "tool_settings")
-            )
-        normalized["mihome"] = mihome
-        return normalized
-
-
-
-    def _req041_config_runtime_snapshot(self, changed: dict[str, Any]) -> dict[str, Any]:
-        """Snapshot only identity/relationship isolation controls before hot apply."""
-        critical = {
-            "enable_auto_user_profile_creation",
-            "portrait_global_mode",
-            "auto_profile_platforms",
-            "owner_group_relationship_projection",
-            "owner_group_interaction_projection",
-            "enable_group_relationship_affinity",
-            "group_relationship_affinity_allowlist",
-            "group_relationship_daily_net_cap",
-            "group_relationship_window_minutes",
-            "group_relationship_window_absolute_cap",
-            "group_relationship_person_daily_absolute_cap",
-            "group_relationship_scope_daily_absolute_cap",
-            "relationship_event_window_minutes",
-            "relationship_positive_event_cap",
-            "relationship_negative_event_cap",
-            "relationship_positive_daily_cap",
-        }
-        snapshot: dict[str, Any] = {}
-        getter = getattr(self, "_config_get_raw", None)
-        for key in sorted(critical & set(changed)):
-            if hasattr(self.plugin, key):
-                snapshot[key] = deepcopy(getattr(self.plugin, key))
-            elif callable(getter):
-                snapshot[key] = deepcopy(getter(key, None))
-        return snapshot
-
-    async def _rollback_req041_config_runtime(self, snapshot: dict[str, Any]) -> bool:
-        """Restore runtime and config object, then durably save the old values."""
-        for key, value in snapshot.items():
-            self._apply_config_value(key, deepcopy(value))
-        try:
-            return bool(await self._save_config_if_possible())
-        except Exception as exc:
-            logger.error(
-                "REQ-041 配置回滚持久化失败: %s",
-                self._single_line(exc, 160),
-            )
-            return False
 
 
 
@@ -1445,76 +1276,8 @@ class PrivateCompanionPageApi(
 
 
 
-    async def get_extension_control_plane_status(self) -> dict[str, Any]:
-        """Expose extension metadata and invariant checks without provider data."""
-        api = getattr(self.plugin, "extension_api", None)
-        getter = getattr(api, "extension_control_plane_status", None)
-        if not callable(getter):
-            return self._ok(
-                {
-                    "protocol_version": "0.1",
-                    "extensions": [],
-                    "issues": ["control_plane_unavailable"],
-                }
-            )
-        try:
-            payload = getter()
-            return self._ok(payload if isinstance(payload, dict) else {})
-        except Exception as exc:
-            logger.error("读取扩展控制面状态失败: %s", self._single_line(exc, 160), exc_info=True)
-            return self._exception_error("读取扩展状态失败")
 
 
-
-    async def get_daily_review(self) -> dict[str, Any]:
-        try:
-            payload_getter = getattr(self.plugin, "_daily_review_status_payload", None)
-            if not callable(payload_getter):
-                return self._error("当前插件版本未加载每日终盘巡视模块")
-            async with self.plugin._data_lock:
-                payload = payload_getter()
-            return self._ok(payload)
-        except Exception as exc:
-            logger.error("获取每日巡视报告失败: %s", self._single_line(exc, 180), exc_info=True)
-            return self._error(str(exc))
-
-    async def run_daily_review(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
-        target_date = self._single_line(payload.get("date"), 16)
-        if target_date and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", target_date):
-            return self._error("巡视日期格式必须为 YYYY-MM-DD")
-        runner = getattr(self.plugin, "_ensure_daily_review", None)
-        if not callable(runner):
-            return self._error("当前插件版本未加载每日终盘巡视模块")
-        try:
-            report = await runner(force=True, target_date=target_date)
-            if not isinstance(report, dict):
-                return self._error("巡视未生成有效报告")
-            async with self.plugin._data_lock:
-                status = self.plugin._daily_review_status_payload()
-            return self._ok({"report": report, **status})
-        except Exception as exc:
-            logger.warning("手动执行每日巡视失败: %s", self._single_line(exc, 180))
-            return self._error(str(exc))
-
-    async def update_daily_review_guidance(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
-        active = bool(payload.get("active", False))
-        try:
-            async with self.plugin._data_lock:
-                guidance = self.plugin.data.get("daily_review_active_guidance")
-                if not isinstance(guidance, dict) or not isinstance(guidance.get("items"), list) or not guidance.get("items"):
-                    return self._error("当前没有可启用的低风险巡视指导")
-                if active and self._float(guidance.get("active_until")) <= time.time():
-                    return self._error("这份巡视指导已经过期，请重新执行巡视")
-                guidance["active"] = active
-                guidance["manual_paused"] = not active
-                self.plugin._save_data_sync(sections={"daily_review_active_guidance"})
-                status = self.plugin._daily_review_status_payload()
-            return self._ok(status)
-        except Exception as exc:
-            logger.error("更新每日巡视指导失败: %s", self._single_line(exc, 180), exc_info=True)
-            return self._error(str(exc))
 
 
 
@@ -2439,62 +2202,11 @@ class PrivateCompanionPageApi(
 
 
 
-    async def _to_thread_sqlite_inspect(self, func: Any, path: Path) -> dict[str, Any]:
-        try:
-            import asyncio
-
-            return await asyncio.to_thread(func, path)
-        except Exception:
-            return func(path)
-
-
-
-    def _remember_deleted_diary_day(self, date_key: str) -> None:
-        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date_key):
-            return
-        stored = self.plugin.data.get("daily_diary_deleted_days")
-        values = stored if isinstance(stored, list) else []
-        normalized: list[str] = []
-        for value in [*values, date_key]:
-            day = self._bookshelf_diary_date_key(value)
-            if re.fullmatch(r"\d{4}-\d{2}-\d{2}", day) and day not in normalized:
-                normalized.append(day)
-        self.plugin.data["daily_diary_deleted_days"] = normalized[-90:]
-        try:
-            revision = max(0, int(self.plugin.data.get("daily_diary_delete_revision") or 0))
-        except (TypeError, ValueError, OverflowError):
-            revision = 0
-        self.plugin.data["daily_diary_delete_revision"] = revision + 1
 
 
 
 
-    async def _read_file_base64(self, path: Path) -> str:
-        import asyncio
 
-        raw = await asyncio.to_thread(path.read_bytes)
-        return base64.b64encode(raw).decode("ascii")
-
-
-    def _archive_item_comment_sample(self, item: dict[str, Any]) -> tuple[Path | None, list[Path], list[int]]:
-        cover_path = self._resolve_bookshelf_data_file(item.get("cover_path"))
-        pages = item.get("pages") if isinstance(item.get("pages"), list) else []
-        page_by_index: dict[int, Path] = {}
-        for page in pages:
-            if not isinstance(page, dict):
-                continue
-            page_index = self._int(page.get("index"))
-            page_path = self._resolve_bookshelf_data_file(page.get("path"))
-            if page_index > 0 and page_path:
-                page_by_index[page_index] = page_path
-        sampled_pages = [
-            self._int(page)
-            for page in (item.get("sampled_pages") if isinstance(item.get("sampled_pages"), list) else [])
-            if self._int(page) > 0 and self._int(page) in page_by_index
-        ][:5]
-        if not sampled_pages:
-            sampled_pages = sorted(page_by_index)[:5]
-        return cover_path, [page_by_index[page] for page in sampled_pages if page in page_by_index], sampled_pages
 
 
 
@@ -2578,36 +2290,6 @@ class PrivateCompanionPageApi(
 
 
 
-
-    def _astrbot_config_candidate_paths(self) -> list[Path]:
-        root = Path(get_astrbot_data_path())
-        home_root = Path.home() / ".astrbot"
-        candidate_roots = [
-            root,
-            home_root / "data",
-            home_root / "backend" / "data",
-            home_root / "backend" / "app" / "data",
-        ]
-        paths: list[Path] = []
-        seen: set[str] = set()
-
-        def add_path(path: Path) -> None:
-            try:
-                key = str(path.resolve()).lower()
-            except Exception:
-                key = str(path).lower()
-            if key in seen:
-                return
-            seen.add(key)
-            paths.append(path)
-
-        for candidate_root in candidate_roots:
-            add_path(candidate_root / "cmd_config.json")
-            config_dir = candidate_root / "config"
-            if config_dir.exists():
-                for path in sorted(config_dir.glob("abconf_*.json")):
-                    add_path(path)
-        return paths
 
 
 
@@ -3020,73 +2702,6 @@ class PrivateCompanionPageApi(
 
 
 
-    def _display_message_text(self, value: Any, limit: int = 500) -> str:
-        source = str(value or "").strip()
-        source = source.strip("\"'“”‘’` ")
-        if self._looks_like_internal_delivery_receipt(source):
-            return ""
-        if re.fullmatch(r"[.。…~～\s\"'“”‘’`-]{0,12}", source):
-            return ""
-        if re.search(r"<t{2,}s\b[^>]*>.*?</t{2,}s>", source, flags=re.IGNORECASE | re.DOTALL):
-            outside = re.sub(r"<t{2,}s\b[^>]*>.*?</t{2,}s>", "", source, flags=re.IGNORECASE | re.DOTALL)
-            outside = re.sub(r"</?t{2,}s\b[^>]*>", "", outside, flags=re.IGNORECASE).strip()
-            if re.search(r"[\u4e00-\u9fff]", outside):
-                source = outside
-            else:
-                source = re.sub(r"</?t{2,}s\b[^>]*>", "", source, flags=re.IGNORECASE)
-        if re.search(r"[\u3040-\u30ff]", source) and re.search(r"[\u4e00-\u9fff]", source):
-            units = re.findall(r".*?[。！？!?…~～]+|.+$", source, flags=re.DOTALL)
-            kept = [unit.strip() for unit in units if unit.strip() and not re.search(r"[\u3040-\u30ff]", unit)]
-            if kept and any(re.search(r"[\u4e00-\u9fff]", item) for item in kept):
-                source = "".join(kept)
-        return self._single_line(_strip_internal_message_blocks(source, enabled=bool(runtime_persona_setting(self.plugin, "enable_framework_error_leak_guard", True))), limit)
-
-    @staticmethod
-    def _looks_like_internal_delivery_receipt(text: Any) -> bool:
-        raw = str(text or "").strip()
-        if not raw:
-            return False
-        compact = re.sub(r"[\s。.!！?？,，；;:：、~～\"'“”‘’（）()【】\[\]]+", "", raw).lower()
-        if compact in {"已发送", "发送成功", "发送完成", "发送完毕", "已成功发送", "消息已发送", "消息发送成功"}:
-            return True
-        markers = (
-            ("已经把", "转给"),
-            ("已把", "转给"),
-            ("已经将", "转给"),
-            ("已将", "转给"),
-            ("已经发给", "就假装"),
-            ("已经发送给", "就假装"),
-            ("就假装", "语气很自然"),
-            ("随手分享", "语气很自然"),
-        )
-        if any(all(token in raw for token in pair) for pair in markers):
-            return True
-        return (
-            any(token in compact for token in ("视频链接转给", "链接转给", "消息转给", "内容转给"))
-            and any(token in compact for token in ("已经", "已", "完成", "成功"))
-        )
-
-    def _sanitize_last_bot_interjection(self, value: Any) -> dict[str, Any]:
-        if not isinstance(value, dict) or not value:
-            return {}
-        item = dict(value)
-        item["text"] = self._display_message_text(item.get("text"), 120)
-        if not item["text"] and not item.get("has_image"):
-            return {}
-        return item
-
-    @staticmethod
-    def _format_duration(seconds: float) -> str:
-        seconds = max(0, int(seconds or 0))
-        if seconds < 60:
-            return "不到 1 分钟"
-        minutes = seconds // 60
-        if minutes < 60:
-            return f"{minutes} 分钟"
-        hours = minutes // 60
-        rest = minutes % 60
-        return f"{hours} 小时 {rest} 分钟" if rest else f"{hours} 小时"
-
 
 
 
@@ -3272,71 +2887,8 @@ class PrivateCompanionPageApi(
 
 
 
-    def _plugin_version(self) -> str:
-        for source in (self.plugin, getattr(self.plugin, "metadata", None)):
-            for attr in ("version", "__version__", "plugin_version"):
-                value = getattr(source, attr, None)
-                if value:
-                    return str(value).strip()
-        try:
-            metadata_path = Path(__file__).with_name("metadata.yaml")
-            text = metadata_path.read_text(encoding="utf-8")
-            match = re.search(r"(?m)^version:\s*['\"]?([^'\"\s#]+)", text)
-            if match:
-                return match.group(1).strip()
-        except Exception:
-            pass
-        return "unknown"
 
 
-
-
-    def _strip_runtime_data(self, value: Any) -> Any:
-        runtime_keys = {
-            "recent_messages",
-            "recent_message_ids",
-            "recent_replies",
-            "recent_group_messages",
-            "proactive_sending",
-            "proactive_audit_log",
-            "proactive_candidates",
-            "pending_followup_event",
-            "pending_timer_events",
-            "pending_atrelay_requests",
-            "suspended_proactive",
-            "input_status",
-            "current_input_status",
-            "recall_message_cache",
-            "image_cache",
-            "visual_summary_cache",
-            "token_usage",
-            "token_stats",
-            "troubleshooting_records",
-            "maintenance_records",
-        }
-        runtime_prefixes = (
-            "recent_",
-            "pending_",
-            "last_message",
-            "last_reply",
-            "last_sent",
-            "last_proactive",
-            "cooldown_",
-            "session_",
-        )
-        if isinstance(value, dict):
-            cleaned: dict[str, Any] = {}
-            for key, item in value.items():
-                key_text = str(key)
-                if key_text in runtime_keys or any(key_text.startswith(prefix) for prefix in runtime_prefixes):
-                    continue
-                if key_text.endswith("_cache") or key_text.endswith("_audit_log"):
-                    continue
-                cleaned[key_text] = self._strip_runtime_data(item)
-            return cleaned
-        if isinstance(value, list):
-            return [self._strip_runtime_data(item) for item in value]
-        return value
 
 
 
@@ -3724,32 +3276,6 @@ class PrivateCompanionPageApi(
                 },
             },
         }
-
-    def _forward_runtime_config_effects(
-        self,
-        key: str,
-        value: Any,
-        overrides: dict[str, Any] | None = None,
-    ) -> None:
-        dispatch_runtime_config_effects(
-            self.plugin,
-            {key: value},
-            source="page",
-            adapter=self,
-            overrides=overrides,
-        )
-
-    def _schedule_body_monitor_integration_toggle(self, enabled: bool) -> asyncio.Task[Any] | None:
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            return None
-        task = loop.create_task(
-            self._sync_body_monitor_integration_toggle(enabled),
-            name="private_companion_body_monitor_toggle",
-        )
-        self.plugin._body_monitor_integration_toggle_task = task
-        return task
 
 
 
@@ -4321,30 +3847,6 @@ class PrivateCompanionPageApi(
 
 
     @staticmethod
-    def _int(value: Any, default: int = 0, minimum: int | None = None, maximum: int | None = None) -> int:
-        try:
-            parsed = int(value)
-        except (TypeError, ValueError):
-            parsed = default
-        if minimum is not None:
-            parsed = max(minimum, parsed)
-        if maximum is not None:
-            parsed = min(maximum, parsed)
-        return parsed
-
-    @staticmethod
-    def _float(value: Any, default: float = 0.0, minimum: float | None = None, maximum: float | None = None) -> float:
-        try:
-            parsed = float(value)
-        except (TypeError, ValueError):
-            parsed = default
-        if minimum is not None:
-            parsed = max(minimum, parsed)
-        if maximum is not None:
-            parsed = min(maximum, parsed)
-        return parsed
-
-    @staticmethod
     def _limited_state_variables(value: Any) -> list[dict[str, str]]:
         if not isinstance(value, list):
             return []
@@ -4582,64 +4084,6 @@ class PrivateCompanionPageApi(
     def _limited_list(value: Any, limit: int) -> list[Any]:
         return list(value[:limit]) if isinstance(value, list) else []
 
-
-    @staticmethod
-    def _sqlite_like_pattern(token: str) -> str:
-        escaped = str(token).replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-        return f"%{escaped}%"
-
-    @staticmethod
-    def _json_dict(value: Any) -> dict[str, Any]:
-        if isinstance(value, dict):
-            return value
-        if not isinstance(value, str) or not value.strip():
-            return {}
-        try:
-            parsed = json.loads(value)
-        except Exception:
-            return {}
-        return parsed if isinstance(parsed, dict) else {}
-
-    @staticmethod
-    def _json_list(value: Any) -> list[Any]:
-        if isinstance(value, list):
-            return value
-        if not isinstance(value, str) or not value.strip():
-            return []
-        try:
-            parsed = json.loads(value)
-        except Exception:
-            return []
-        return parsed if isinstance(parsed, list) else []
-
-    @staticmethod
-    def _coerce_float(value: Any, default: float = 0.0) -> float:
-        try:
-            return float(value)
-        except (TypeError, ValueError):
-            return default
-
-    @staticmethod
-    def _sqlite_table_exists(conn: sqlite3.Connection, table: str) -> bool:
-        row = conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=? LIMIT 1", (table,)).fetchone()
-        return row is not None
-
-    @staticmethod
-    def _query_int(name: str, default: int, minimum: int, maximum: int) -> int:
-        raw = request.args.get(name, default)
-        try:
-            value = int(raw)
-        except (TypeError, ValueError):
-            value = default
-        return max(minimum, min(maximum, value))
-
-    @staticmethod
-    def _clamp_int(raw: Any, default: int, minimum: int, maximum: int) -> int:
-        try:
-            value = int(raw)
-        except (TypeError, ValueError):
-            value = default
-        return max(minimum, min(maximum, value))
 
     @staticmethod
     def _normalize_id_list(value: Any) -> list[str]:
