@@ -68,7 +68,7 @@ BUILTINS = {
     "__debug__", "__class__", "__module__", "__qualname__", "__dict__",
     "self", "cls",
     "abs", "all", "any", "bool", "bytes", "callable", "chr", "dict", "dir",
-    "enumerate", "filter", "float", "format", "frozenset", "getattr",
+    "enumerate", "float", "format", "frozenset", "getattr",
     "hasattr", "hash", "int", "isinstance", "issubclass", "iter", "len",
     "list", "map", "max", "min", "next", "object", "open", "ord", "pow",
     "print", "range", "repr", "reversed", "round", "set", "setattr", "slice",
@@ -76,7 +76,12 @@ BUILTINS = {
     "super", "tuple", "type", "vars", "zip", "Exception", "BaseException",
     "ValueError", "TypeError", "KeyError", "IndexError", "AttributeError",
     "RuntimeError", "OSError", "FileNotFoundError", "ImportError",
-    "ModuleNotFoundError", "StopIteration", "NotImplementedError", "Any",
+    "ModuleNotFoundError", "StopIteration", "NotImplementedError",
+    # 注意：`filter` 与 `Any` **不能**列在这里。
+    # `filter` 在 AstrBot 里是被 import 覆盖的事件过滤器（@filter.on_llm_request），
+    # `Any` 来自 typing；一旦当 builtin 排除，新模块就会漏 import，
+    # 类体求值时报 `type object 'filter' has no attribute 'on_llm_request'`。
+    # 让它们走正常依赖分析即可：宿主有对应 import 就生成，没有就落到内置语义。
 }
 
 CONTAINERS = tuple(
