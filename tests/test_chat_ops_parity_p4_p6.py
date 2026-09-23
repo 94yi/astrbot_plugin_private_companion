@@ -56,12 +56,12 @@ def live_state(**changes: object) -> dict[str, str]:
 
 def _load_p4_live_state_for_event() -> object:
     """Compile only the chat-side lookup method without importing AstrBot."""
-    source = (ROOT / "main.py").read_text(encoding="utf-8")
-    tree = ast.parse(source)
-    method = deepcopy(next(
-        node for node in ast.walk(tree)
-        if isinstance(node, ast.FunctionDef) and node.name == "_p4_live_state_for_event"
-    ))
+    # 方法已随域拆分分散在 main.py 与 main_*.py，跨宿主族聚合定位。
+    from tests.module_source_index import find_method
+
+    found = find_method(ROOT, "main", "PrivateCompanionPlugin", "_p4_live_state_for_event")
+    assert found is not None
+    method = deepcopy(found)
     module = ast.Module(
         body=[
             ast.ImportFrom(

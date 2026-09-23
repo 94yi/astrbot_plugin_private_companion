@@ -14,14 +14,9 @@ from tests.module_source_index import find_method
 
 class EmotionE1PromptCacheTests(unittest.TestCase):
     def test_expression_decision_is_a_forced_dynamic_fragment(self) -> None:
-        source = (ROOT / "main.py").read_text(encoding="utf-8")
-        tree = ast.parse(source)
-        hook = next(
-            node
-            for node in ast.walk(tree)
-            if isinstance(node, ast.AsyncFunctionDef)
-            and node.name == "inject_unified_relationship_expression"
-        )
+        # 方法已随域拆分分散在 main.py 与 main_*.py，跨宿主族聚合定位。
+        hook = find_method(ROOT, "main", "PrivateCompanionPlugin", "inject_unified_relationship_expression")
+        assert hook is not None
         calls = [
             node
             for node in ast.walk(hook)

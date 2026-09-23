@@ -1413,9 +1413,11 @@ def test_non_adult_output_guard_and_shared_consumers_are_wired() -> None:
     ):
         assert detector(normal_context) is False
 
-    main_tree = ast.parse((ROOT / "main.py").read_text(encoding="utf-8"))
-    plugin = next(node for node in main_tree.body if isinstance(node, ast.ClassDef) and node.name == "PrivateCompanionPlugin")
-    hook = next(node for node in plugin.body if isinstance(node, ast.AsyncFunctionDef) and node.name == "inject_unified_relationship_expression")
+    # 方法已随域拆分分散在 main.py 与 main_*.py，跨宿主族聚合定位。
+    from tests.module_source_index import find_method
+
+    hook = find_method(ROOT, "main", "PrivateCompanionPlugin", "inject_unified_relationship_expression")
+    assert hook is not None
     hook_names = {node.id for node in ast.walk(hook) if isinstance(node, ast.Name)}
     assert {"content_intent_from_text", "expression_decision_prompt_section"} <= hook_names
     assert "prompt_section" not in hook_names
@@ -1488,7 +1490,10 @@ def test_legacy_relationship_state_has_no_parallel_expression_consumers() -> Non
     assert "relationship_state" not in tool_source
     assert "_build_expression_decision_for_user" in tool_source
 
-    main_source = (ROOT / "main.py").read_text(encoding="utf-8")
+    # main.py 的源码断言需跨宿主族聚合（方法已分散到 main_*.py）。
+    from tests.module_source_index import main_source_text
+
+    main_source = main_source_text(ROOT)
     assert main_source.count("expression_decision_prompt_section(projection)") == 1
 
 

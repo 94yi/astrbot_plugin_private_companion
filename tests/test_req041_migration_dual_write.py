@@ -406,7 +406,10 @@ class MigrationDualWriteTests(unittest.TestCase):
         self.assertEqual("paused", host.req041_migration_status["state"])
 
     def test_all_live_identity_entrypoints_call_dual_write_helper(self) -> None:
-        main_source = (ROOT / "main.py").read_text(encoding="utf-8")
+        # 方法已随域拆分分散在 main.py 与 main_*.py，跨宿主族聚合拼接。
+        from tests.module_source_index import main_source_text
+
+        main_source = main_source_text(ROOT)
         page_source = (ROOT / "page_api_users_groups.py").read_text(encoding="utf-8")
         self.assertIn("self._req041_emit_identity_dual_write(", main_source)
         self.assertGreaterEqual(page_source.count("_req041_emit_identity_dual_write"), 2)

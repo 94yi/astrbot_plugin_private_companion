@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import asyncio
 from collections.abc import Mapping
+import copy
 import importlib.util
 import json
 from pathlib import Path
@@ -77,17 +78,13 @@ def _group_wakeup_method(name: str):
 
 
 def _main_method(name: str):
-    tree = ast.parse((ROOT / "main.py").read_text(encoding="utf-8"))
-    plugin = next(
-        node
-        for node in tree.body
-        if isinstance(node, ast.ClassDef) and node.name == "PrivateCompanionPlugin"
-    )
-    method = next(
-        node
-        for node in plugin.body
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == name
-    )
+    # 方法已随域拆分分散在 main.py 与 main_*.py，跨宿主族聚合定位。
+    from tests.module_source_index import find_method
+
+    method = find_method(ROOT, "main", "PrivateCompanionPlugin", name)
+    if method is None:
+        raise AssertionError(f"未能在 main 族模块中定位方法 {name}")
+    method = copy.deepcopy(method)
     method.decorator_list = []
     namespace = {
         "Any": Any,

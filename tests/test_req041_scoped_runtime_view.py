@@ -364,7 +364,11 @@ class ConsumerWiringTests(unittest.TestCase):
         self.assertIn("user.pop(key, None)", page)
 
     def test_portrait_bridge_carries_the_formal_scoped_namespace(self) -> None:
-        source = (ROOT / "main.py").read_text(encoding="utf-8")
+        # 方法已随域拆分分散在 main.py 与 main_*.py，跨宿主族聚合拼接。
+        source = "\n".join(
+            (ROOT / name).read_text(encoding="utf-8")
+            for name in sorted(p.name for p in ROOT.glob("main*.py"))
+        )
         self.assertIn('"private_companion_namespace_context"', source)
         self.assertIn('request["namespace_context"] = dict(namespace_context)', source)
         self.assertIn('request["namespace_context"] = namespace_context.to_dict()', source)
