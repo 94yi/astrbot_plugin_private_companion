@@ -464,15 +464,11 @@ class IncrementalPersistenceCallsiteTests(unittest.TestCase):
         )
 
     def test_proactive_only_meal_care_marks_food_menu(self) -> None:
-        tree = ast.parse(
-            (ROOT / "main.py").read_text(encoding="utf-8"),
-            filename="main.py",
-        )
+        # 方法已随域拆分迁至 main_*.py，跨宿主族聚合定位（module_source_index 风格）。
         handler = next(
-            node
-            for node in ast.walk(tree)
-            if isinstance(node, ast.AsyncFunctionDef)
-            and node.name == "_record_proactive_only_private_feedback"
+            child
+            for child, _owner in iter_class_methods(ROOT, "main", "PrivateCompanionPlugin")
+            if child.name == "_record_proactive_only_private_feedback"
         )
         source = ast.unparse(handler)
 

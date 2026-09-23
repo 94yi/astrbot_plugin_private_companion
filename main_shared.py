@@ -247,3 +247,66 @@ class _OneBotReactionImage(BaseMessageComponent):
 
     def __repr__(self) -> str:
         return f"_OneBotReactionImage(path={self.path!r}, sub_type={self.sub_type})"
+_PROACTIVE_ONLY_TEMP_UNLOCK_GROUPS = {
+    "private_event_pipeline": {
+        "enable_message_debounce",
+        "enable_private_image_self_recognition",
+        "enable_forward_message_adaptation",
+    },
+    "group_event_pipeline": {
+        "enable_group_companion",
+        "enable_message_debounce",
+        "enable_forward_message_adaptation",
+    },
+    "llm_request": {
+        "inject_passive_states",
+        "enable_intent_emotion_analysis",
+        "enable_llm_timer_scheduling",
+        "enable_passive_topic_suppression",
+        "enable_environment_perception",
+        "enable_tts_enhancement",
+        "enable_private_image_self_recognition",
+        "enable_forward_message_adaptation",
+        "enable_group_companion",
+        "enable_skill_growth_passive_injection",
+        "enable_food_menu_recommendation",
+        "enable_worldbook_member_recognition",
+        "enable_cross_user_memory_bridge",
+        "enable_livingmemory_integration",
+    },
+    "pc_tools": {
+        "enable_atrelay_tools",
+        "enable_worldbook_member_recognition",
+        "enable_cross_user_memory_bridge",
+        "enable_qzone_integration",
+    },
+}
+_PROACTIVE_ONLY_TEMP_UNLOCK_LABELS = {
+    "all": "全部被动链路",
+    "inject_passive_states": "被动状态注入",
+    "enable_intent_emotion_analysis": "意图/情绪分析",
+    "enable_llm_timer_scheduling": "预约类主动捕获",
+    "enable_passive_topic_suppression": "重复话题抑制",
+    "enable_environment_perception": "环境感知",
+    "enable_message_debounce": "防抖",
+    "enable_recall_enhancement": "撤回增强",
+    "enable_private_image_self_recognition": "私聊图片识别",
+    "enable_forward_message_adaptation": "合并/转发消息阅读",
+    "enable_group_companion": "群聊观察",
+    "enable_skill_growth_passive_injection": "技能被动注入",
+    "enable_food_menu_recommendation": "吃什么候选",
+    "enable_meal_care_proactive": "饭点主动关心",
+    "enable_worldbook_member_recognition": "关系网成员识别",
+    "enable_cross_user_memory_bridge": "跨用户记忆互通",
+    "enable_atrelay_tools": "跨群转述工具",
+    "enable_livingmemory_integration": "记忆插件被动引导",
+    "enable_tts_enhancement": "TTS 后处理",
+    "enable_segmented_proactive_reply": "普通 LLM 分段",
+}
+
+_PROACTIVE_ONLY_TEMP_UNLOCK_RELATED = {
+    "enable_atrelay_tools": ["enable_worldbook_member_recognition"],
+    "enable_cross_user_memory_bridge": ["enable_worldbook_member_recognition"],
+    "enable_group_companion": ["enable_worldbook_member_recognition"],
+    "enable_forward_message_adaptation": ["enable_private_image_self_recognition"],
+}
