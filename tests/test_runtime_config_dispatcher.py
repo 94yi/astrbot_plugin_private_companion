@@ -162,6 +162,12 @@ def test_legacy_entrypoints_are_effect_free_adapters() -> None:
                 (root / name).read_text(encoding="utf-8")
                 for name in sorted(p.name for p in root.glob("page_api*.py"))
             ]
+        elif filename == "main.py":
+            # 宿主方法已随域拆分分散到 main_*.py，需跨宿主族聚合定位
+            sources = [
+                (root / name).read_text(encoding="utf-8")
+                for name in sorted(p.name for p in root.glob("main*.py"))
+            ]
         else:
             sources = [(root / filename).read_text(encoding="utf-8")]
         function = next(
