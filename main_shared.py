@@ -21,10 +21,12 @@ import base64
 from pathlib import Path
 
 try:
-    from astrbot.api.message_components import BaseMessageComponent, ComponentType
+    from astrbot.api.message_components import BaseMessageComponent, ComponentType, Plain
 except ImportError:
-    from astrbot.core.message.components import BaseMessageComponent, ComponentType
-from .persona_config import load_scope_manifest
+    from astrbot.core.message.components import BaseMessageComponent, ComponentType, Plain
+from .helpers import _strip_internal_message_blocks
+from .persona_config import load_scope_manifest, runtime_persona_setting
+from .segmented_message import LLM_SEGMENT_MARKER
 
 _PRIVATE_COMPANION_RUNTIME_KEY = "ASTROBOT_PRIVATE_COMPANION_RUNTIME"
 
@@ -310,3 +312,29 @@ _PROACTIVE_ONLY_TEMP_UNLOCK_RELATED = {
     "enable_group_companion": ["enable_worldbook_member_recognition"],
     "enable_forward_message_adaptation": ["enable_private_image_self_recognition"],
 }
+
+
+def _strip_chain_plain_thinking(owner: Any, chain: list[Any]) -> None:
+    """Clean registered internal tags from all Plain components as one span."""
+    if not bool(runtime_persona_setting(owner, "enable_framework_error_leak_guard", True)):
+        return
+    plain_components = [(i, comp) for i, comp in enumerate(chain) if isinstance(comp, Plain)]
+    if not plain_components:
+        return
+    all_text = "".join(str(getattr(comp, "text", "") or "") for _, comp in plain_components)
+    split_marker_token = "\x00PRIVATE_COMPANION_SPLIT\x00"
+    all_text = all_text.replace(LLM_SEGMENT_MARKER, split_marker_token)
+    cleaned = _strip_internal_message_blocks(
+        all_text,
+        tts_enabled=bool(runtime_persona_setting(owner, "enable_tts_enhancement", False)),
+    )
+    cleaned = cleaned.replace(split_marker_token, LLM_SEGMENT_MARKER)
+    if not all_text.startswith("\n"):
+        cleaned = cleaned.lstrip("\n")
+    if cleaned == all_text:
+        return
+    for idx, (_, comp) in enumerate(plain_components):
+        try:
+            comp.text = cleaned if idx == 0 else ""
+        except Exception:
+            pass
