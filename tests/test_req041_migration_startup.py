@@ -704,7 +704,12 @@ class MigrationStartupTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("migration_source_path_invalid", host.req041_migration_status["code"])
 
     def test_initialize_schedules_migration_before_scheduler_and_maintenance(self) -> None:
-        source = (ROOT / "main.py").read_text(encoding="utf-8")
+        # initialize 已随 main.py 拆分迁至 main_lifecycle.py，跨宿主族聚合源码
+        # 断言（86ebc90 范本）；三个标记同在迁走的 initialize 体内，拼接后相对顺序不变。
+        source = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in [ROOT / "main.py", *sorted(ROOT.glob("main_*.py"))]
+        )
         migration = source.index('"req041_automatic_migration"')
         scheduler = source.index("self._task = asyncio.create_task(self._scheduler_loop())")
         maintenance = source.index("self._startup_maintenance_task = asyncio.create_task")
