@@ -19,6 +19,11 @@ from astrbot.api.event import AstrMessageEvent, MessageChain
 from astrbot.core.platform.message_session import MessageSession
 from typing import Any
 
+try:
+    from astrbot.api.message_components import At, Plain
+except ImportError:
+    from astrbot.api.message_components import At, Plain
+
 
 
 class LlmToolActionsInteractionRelayMixin:
