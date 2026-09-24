@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 from tests.module_source_index import (  # noqa: E402
     main_source_text,
     proactive_message_source_text,
+    user_memory_mixin_tree,
 )
 
 
@@ -42,7 +43,7 @@ def _runtime_persona_setting(owner: Any, key: str, default: Any = None) -> Any:
 
 def _relationship_prompt_probe() -> type:
     path = ROOT / "user_memory.py"
-    tree = ast.parse(path.read_text(encoding="utf-8"))
+    tree = user_memory_mixin_tree(ROOT)
     owner = next(
         node
         for node in tree.body

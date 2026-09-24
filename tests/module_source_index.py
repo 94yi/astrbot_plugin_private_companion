@@ -40,6 +40,7 @@ _HOST_SCOPE = {
     "proactive_engine": ("proactive_engine.py", "proactive_engine_*.py"),
     "message_pipeline": ("message_pipeline.py", "message_pipeline_*.py"),
     "content_companion": ("content_companion.py", "content_companion_*.py"),
+    "user_memory": ("user_memory.py", "user_memory_*.py"),
 }
 
 
@@ -107,6 +108,10 @@ def content_companion_sources(root: Path) -> list[Path]:
     return host_sources(root, "content_companion")
 
 
+def user_memory_sources(root: Path) -> list[Path]:
+    return host_sources(root, "user_memory")
+
+
 def iter_module_sources(root: Path, host: str = "main") -> Iterator[tuple[Path, ast.Module]]:
     """逐个产出 (路径, 已解析 AST)，跳过语法不可解析或读取失败的文件。"""
     for path in host_sources(root, host):
@@ -135,10 +140,18 @@ def _accept_class(name: str, concrete: str) -> bool:
 
     命中规则（任一成立即可）：
     - 与具体宿主类名完全相同（如 ``PrivateCompanionPlugin``）；
-    - 以具体宿主类名开头（如 ``PrivateCompanionPluginReq041Mixin``）。
+    - 以具体宿主类名开头（如 ``PrivateCompanionPluginReq041Mixin``）；
+    - 宿主类名以 ``Mixin`` 结尾时，接受「宿主名去 Mixin 后缀 + 任意域前缀 + Mixin」
+      （如 ``UserMemoryMixin`` -> ``UserMemoryExpressionRuleMixin``）。
+
     这样既能在宿主类体里找，也能在各域 mixin 类体里找。
     """
-    return name == concrete or name.startswith(concrete)
+    if name == concrete or name.startswith(concrete):
+        return True
+    if concrete.endswith("Mixin") and len(concrete) > len("Mixin"):
+        stem = concrete[: -len("Mixin")]
+        return name.startswith(stem) and name.endswith("Mixin")
+    return False
 
 
 # 公开别名：供测试直接复用同一套「宿主族」判定规则
@@ -268,3 +281,31 @@ def proactive_message_source_text(root: Path) -> str:
 def proactive_engine_source_text(root: Path) -> str:
     """``host_source_text(root, "proactive_engine")`` 的便捷别名。"""
     return host_source_text(root, "proactive_engine")
+
+
+def user_memory_source_text(root: Path) -> str:
+    """``host_source_text(root, "user_memory")`` 的便捷别名。"""
+    return host_source_text(root, "user_memory")
+
+
+def user_memory_mixin_tree(root: Path) -> ast.Module:
+    """合成一棵只含 ``UserMemoryMixin`` 的 AST，类体聚合了宿主 + 全部域 mixin。
+
+    ``user_memory.py`` 拆分后，既有测试里
+    ``ast.parse((ROOT / "user_memory.py").read_text())`` 的写法会漏掉已搬走的方法。
+    本函数返回一个形状兼容的 ``ast.Module``，使得后续
+    ``next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "UserMemoryMixin")``
+    以及 ``owner.body`` 遍历**无需任何改动**即可覆盖整个模块族。
+    """
+    return ast.Module(
+        body=[
+            ast.ClassDef(
+                name="UserMemoryMixin",
+                bases=[],
+                keywords=[],
+                body=class_body_defs(root, "user_memory", "UserMemoryMixin"),
+                decorator_list=[],
+            )
+        ],
+        type_ignores=[],
+    )

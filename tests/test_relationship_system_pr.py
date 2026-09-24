@@ -82,9 +82,10 @@ def _class_method(filename: str, class_name: str, method_name: str, namespace: d
     # 拆分后方法可能已搬离宿主到 page_api_*.py 的 mixin，按方法名跨域定位
     # （沿 tests/test_page_api_incremental_persistence._function_anywhere 的先例）。
     sources: list[Path] = [ROOT / filename]
-    for p in sorted(ROOT.glob("page_api_*.py")):
-        if p != sources[0]:
-            sources.append(p)
+    for pattern in ("page_api_*.py", "user_memory_*.py"):
+        for p in sorted(ROOT.glob(pattern)):
+            if p != sources[0] and p not in sources:
+                sources.append(p)
     for path in sources:
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -1443,6 +1444,10 @@ def test_legacy_relationship_state_has_no_parallel_expression_consumers() -> Non
         # 重构后 proactive_message 的方法已拆到域模块，改用跨模块定位。
         if filename == "proactive_message.py":
             node = find_method(ROOT, "proactive_message", class_name, method_name)
+            assert node is not None, f"{class_name}.{method_name} 未找到"
+            return ast.unparse(node)
+        if filename == "user_memory.py":
+            node = find_method(ROOT, "user_memory", class_name, method_name)
             assert node is not None, f"{class_name}.{method_name} 未找到"
             return ast.unparse(node)
         tree = ast.parse((ROOT / filename).read_text(encoding="utf-8"))

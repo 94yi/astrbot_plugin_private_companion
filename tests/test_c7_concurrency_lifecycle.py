@@ -7,6 +7,7 @@ import sys
 import types
 import unittest
 
+from tests.module_source_index import user_memory_source_text
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -62,8 +63,9 @@ class CompanionConcurrencyStaticTests(unittest.TestCase):
 
     def test_untracked_main_background_tasks_are_not_left_in_message_paths(self):
         source = "\n".join(
-            (ROOT / name).read_text(encoding="utf-8")
-            for name in ("main.py", "message_pipeline.py", "daily_state_tick.py", "user_memory.py")
+            [(ROOT / name).read_text(encoding="utf-8")
+             for name in ("main.py", "message_pipeline.py", "daily_state_tick.py")]
+            + [user_memory_source_text(ROOT)]
         )
         for marker in (
             "asyncio.create_task(self._refine_inbound_emotion_with_model",
@@ -85,6 +87,7 @@ class CompanionConcurrencyStaticTests(unittest.TestCase):
                 "user_memory.py",
             )
         }
+        sources["user_memory.py"] = user_memory_source_text(ROOT)
         config_source = sources["config_migration.py"]
         self.assertIn("_private_companion_config_save_tasks", config_source)
         self.assertIn("done_task.result()", config_source)

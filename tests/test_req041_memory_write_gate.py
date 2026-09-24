@@ -14,13 +14,14 @@ from authoritative_private_memory import (
     private_memory_content,
 )
 from unified_person_registry import UnifiedPersonRegistry
+from tests.module_source_index import user_memory_mixin_tree, user_memory_source_text
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def _load_methods(*names: str) -> dict[str, Any]:
-    tree = ast.parse((ROOT / "user_memory.py").read_text(encoding="utf-8"))
+    tree = user_memory_mixin_tree(ROOT)
     owner = next(
         node for node in tree.body
         if isinstance(node, ast.ClassDef) and node.name == "UserMemoryMixin"

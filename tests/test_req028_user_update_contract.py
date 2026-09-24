@@ -10,6 +10,7 @@ from typing import Any
 import unittest
 
 
+from tests.module_source_index import user_memory_mixin_tree
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
@@ -98,7 +99,7 @@ UPDATE_USER, REQUEST = _load_update_user()
 
 def _load_interaction_settler() -> Any:
     path = ROOT / "user_memory.py"
-    tree = ast.parse(path.read_text(encoding="utf-8"))
+    tree = user_memory_mixin_tree(ROOT)
     owner = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "UserMemoryMixin")
     method = next(
         node

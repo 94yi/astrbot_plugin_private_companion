@@ -24,6 +24,7 @@ from authoritative_private_memory import (
 )
 from astrbot_plugin_private_companion import user_memory as user_memory_module
 from astrbot_plugin_private_companion.user_memory import UserMemoryMixin
+from tests.module_source_index import user_memory_mixin_tree, user_memory_source_text
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -704,7 +705,7 @@ class Req041StoreContractTests(unittest.TestCase):
 
     def test_dialogue_operation_id_follows_llm_output_not_input_hash(self):
         """方案 E：同一段输入的不同产物必须得到不同的 operation_id。"""
-        source = (ROOT / "user_memory.py").read_text(encoding="utf-8")
+        source = user_memory_source_text(ROOT)
         dialogue_source = source[
             source.index("async def _refresh_dialogue_episode_batch"):
             source.index("def _build_expression_decision_for_user")
@@ -722,6 +723,8 @@ class Req041StoreContractTests(unittest.TestCase):
 
 class Req041CriticalSectionTests(unittest.TestCase):
     def _module_tree(self, name: str) -> ast.Module:
+        if name == "user_memory.py":
+            return user_memory_mixin_tree(ROOT)
         return ast.parse((ROOT / name).read_text(encoding="utf-8"))
 
     def _method(self, tree: ast.Module, name: str) -> ast.AsyncFunctionDef:

@@ -49,6 +49,8 @@ def _method_from(path: Path, class_name: str, method_name: str, globals_map: dic
         candidates.extend(sorted(path.parent.glob("main_*.py")))
     elif path.name == "page_api.py":
         candidates.extend(sorted(path.parent.glob("page_api_*.py")))
+    elif path.name == "user_memory.py":
+        candidates.extend(sorted(path.parent.glob("user_memory_*.py")))
     for candidate in candidates:
         tree = ast.parse(candidate.read_text(encoding="utf-8"), filename=str(candidate))
         class_node = next(

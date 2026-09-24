@@ -21,7 +21,7 @@ from companion_interaction_expression import (  # noqa: E402
     expression_decision_prompt,
     resolve_expression_decision,
 )
-from tests.module_source_index import find_method  # noqa: E402
+from tests.module_source_index import find_method, host_sources, user_memory_mixin_tree  # noqa: E402
 
 
 class Req028ExpressionContractTests(unittest.TestCase):
@@ -260,9 +260,8 @@ class Req028ExpressionContractTests(unittest.TestCase):
         self.assertNotIn("relationship_score", prompt)
 
     def test_legacy_relationship_fields_are_compatibility_only_for_expression(self) -> None:
-        source = (ROOT / "user_memory.py").read_text(encoding="utf-8")
-        tree = ast.parse(source)
-        owner = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "UserMemoryMixin")
+        tree = user_memory_mixin_tree(ROOT)
+        owner = tree.body[0]
         profile_method = next(node for node in owner.body if isinstance(node, ast.FunctionDef) and node.name == "_relationship_profile")
         constants = {node.value for node in ast.walk(profile_method) if isinstance(node, ast.Constant) and isinstance(node.value, str)}
         self.assertNotIn("persona_relationship", constants)
@@ -402,8 +401,7 @@ class Req028ExpressionContractTests(unittest.TestCase):
             "proactive_message.py",
             "reading_archive.py",
             "main.py",
-            "user_memory.py",
-        )
+        ) + tuple(path.name for path in host_sources(ROOT, "user_memory"))
         for filename in runtime_files:
             with self.subTest(filename=filename):
                 tree = ast.parse((ROOT / filename).read_text(encoding="utf-8"))
@@ -417,9 +415,8 @@ class Req028ExpressionContractTests(unittest.TestCase):
                     )
 
     def test_expression_context_has_no_legacy_state_consumer_or_sync_adapter(self) -> None:
-        source = (ROOT / "user_memory.py").read_text(encoding="utf-8")
-        tree = ast.parse(source)
-        owner = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "UserMemoryMixin")
+        tree = user_memory_mixin_tree(ROOT)
+        owner = tree.body[0]
         methods = {
             node.name: node
             for node in owner.body
