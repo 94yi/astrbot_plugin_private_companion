@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock, patch
 from astrbot_plugin_private_companion import page_api as page_api_mod
 from astrbot_plugin_private_companion import page_api_persona as page_api_persona_mod
 from astrbot_plugin_private_companion import page_api_persona_config as page_api_persona_config_mod
+from astrbot_plugin_private_companion import page_api_persona_flow as page_api_persona_flow_mod
 from astrbot_plugin_private_companion.page_api import PrivateCompanionPageApi
 
 
@@ -46,6 +47,7 @@ class SpecificDeleteFeedbackTests(unittest.IsolatedAsyncioTestCase):
                 page_api_mod,
                 page_api_persona_mod,
                 page_api_persona_config_mod,
+                page_api_persona_flow_mod,
             ):
                 stack.enter_context(patch.object(mod, "request", fake_request))
             return await method()
