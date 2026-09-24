@@ -338,3 +338,4 @@ def _strip_chain_plain_thinking(owner: Any, chain: list[Any]) -> None:
             comp.text = cleaned if idx == 0 else ""
         except Exception:
             pass
+_PHOTO_TOOL_PROMPT_FORMAT_MARKER = "<!-- private_companion_prompt_format_req_v1 -->"
