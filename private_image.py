@@ -51,11 +51,7 @@ from .segmented_message import (
 )
 from .logging_util import get_module_logger
 
-logger = get_module_logger(__name__)
-
-
-PREPARED_IMAGE_MAX_AGE_SECONDS = 30 * 60
-CONTEXT_IMAGE_FAILURE_COOLDOWN_SECONDS = 5 * 60
+from .private_image_shared import logger, _private_image_host, PREPARED_IMAGE_MAX_AGE_SECONDS, CONTEXT_IMAGE_FAILURE_COOLDOWN_SECONDS
 
 
 class _PublicOnlyRedirectHandler(urllib.request.HTTPRedirectHandler):
@@ -276,7 +272,7 @@ class PrivateImageMixin:
                 except Exception:
                     continue
         try:
-            astrbot_root = Path(get_astrbot_data_path()).resolve()
+            astrbot_root = Path(_private_image_host.get_astrbot_data_path()).resolve()
         except Exception:
             astrbot_root = None
         if astrbot_root is not None:
@@ -430,7 +426,7 @@ class PrivateImageMixin:
         text = str(source or "").strip()
         if not re.match(r"^https?://", text, flags=re.I):
             return ""
-        if public_hosts_only and not await asyncio.to_thread(_url_host_is_public, text):
+        if public_hosts_only and not await asyncio.to_thread(_private_image_host._url_host_is_public, text):
             logger.warning(
                 "remote image host rejected: url=%s",
                 _single_line(text, 160),
@@ -450,7 +446,7 @@ class PrivateImageMixin:
                         "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
                     },
                 )
-                opener = urllib.request.build_opener(_PublicOnlyRedirectHandler()) if public_hosts_only else None
+                opener = urllib.request.build_opener(_private_image_host._PublicOnlyRedirectHandler()) if public_hosts_only else None
                 response_cm = opener.open(request, timeout=15) if opener is not None else urllib.request.urlopen(request, timeout=15)
                 with response_cm as response:
                     content_type = str(response.headers.get("Content-Type") or "").lower()
@@ -6886,11 +6882,11 @@ class PrivateImageMixin:
         delayed_buffer["messages"] = list(messages)
         handoff = (
             self._remember_private_image_vision_handoff(key, original_event, delayed_buffer)
-            if isinstance(original_event, AstrMessageEvent)
+            if isinstance(original_event, _private_image_host.AstrMessageEvent)
             else None
         )
         buffers.pop(key, None)
-        if isinstance(original_event, AstrMessageEvent):
+        if isinstance(original_event, _private_image_host.AstrMessageEvent):
             try:
                 await self._send_delayed_private_image_only_event(original_event, user_id, delayed_buffer)
             finally:

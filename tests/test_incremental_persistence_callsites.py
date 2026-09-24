@@ -16,7 +16,7 @@ from astrbot_plugin_private_companion.core_store import (
 )
 from astrbot_plugin_private_companion.event_dispatch import EventDispatchMixin
 from astrbot_plugin_private_companion.story_handoff import STORY_MIGRATION_COMMIT_KEY
-from module_source_index import iter_class_methods
+from module_source_index import iter_class_methods, private_image_source_text
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -457,7 +457,7 @@ class IncrementalPersistenceCallsiteTests(unittest.TestCase):
         self.assertEqual([], bare_calls)
 
     def test_private_image_buffer_persists_smart_learning_state(self) -> None:
-        source = (ROOT / "private_image.py").read_text(encoding="utf-8")
+        source = private_image_source_text(ROOT)
         self.assertIn(
             'scheduler(sections={"smart_message_debounce"})',
             source,

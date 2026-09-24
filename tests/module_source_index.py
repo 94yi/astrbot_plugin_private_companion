@@ -42,6 +42,7 @@ _HOST_SCOPE = {
     "content_companion": ("content_companion.py", "content_companion_*.py"),
     "user_memory": ("user_memory.py", "user_memory_*.py"),
     "llm_tool_actions": ("llm_tool_actions.py", "llm_tool_actions_*.py"),
+    "private_image": ("private_image.py", "private_image_*.py"),
 }
 
 
@@ -115,6 +116,10 @@ def user_memory_sources(root: Path) -> list[Path]:
 
 def llm_tool_actions_sources(root: Path) -> list[Path]:
     return host_sources(root, "llm_tool_actions")
+
+
+def private_image_sources(root: Path) -> list[Path]:
+    return host_sources(root, "private_image")
 
 
 def iter_module_sources(root: Path, host: str = "main") -> Iterator[tuple[Path, ast.Module]]:
@@ -298,6 +303,11 @@ def llm_tool_actions_source_text(root: Path) -> str:
     return host_source_text(root, "llm_tool_actions")
 
 
+def private_image_source_text(root: Path) -> str:
+    """``host_source_text(root, "private_image")`` 的便捷别名。"""
+    return host_source_text(root, "private_image")
+
+
 def user_memory_mixin_tree(root: Path) -> ast.Module:
     """合成一棵只含 ``UserMemoryMixin`` 的 AST，类体聚合了宿主 + 全部域 mixin。
 
@@ -337,6 +347,29 @@ def llm_tool_actions_mixin_tree(root: Path) -> ast.Module:
                 bases=[],
                 keywords=[],
                 body=class_body_defs(root, "llm_tool_actions", "LlmToolActionsMixin"),
+                decorator_list=[],
+            )
+        ],
+        type_ignores=[],
+    )
+
+
+def private_image_mixin_tree(root: Path) -> ast.Module:
+    """合成一棵只含 ``PrivateImageMixin`` 的 AST，类体聚合宿主 + 全部域 mixin。
+
+    ``private_image.py`` 拆分后，既有测试里
+    ``ast.parse((ROOT / "private_image.py").read_text())`` 的写法会漏掉已搬走的方法。
+    本函数返回形状兼容的 ``ast.Module``，使后续
+    ``next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "PrivateImageMixin")``
+    以及 ``owner.body`` 遍历无需改动即可覆盖整个模块族。
+    """
+    return ast.Module(
+        body=[
+            ast.ClassDef(
+                name="PrivateImageMixin",
+                bases=[],
+                keywords=[],
+                body=class_body_defs(root, "private_image", "PrivateImageMixin"),
                 decorator_list=[],
             )
         ],
