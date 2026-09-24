@@ -28,6 +28,7 @@ PAGE_API = REPO_ROOT / "page_api.py"
 PAGE_API_DOMAIN_FILES = (
     REPO_ROOT / "page_api.py",
     REPO_ROOT / "page_api_persona.py",
+    REPO_ROOT / "page_api_persona_runtime.py",
     REPO_ROOT / "page_api_media.py",
 )
 

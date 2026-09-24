@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, patch
 
 from astrbot_plugin_private_companion import page_api as page_api_mod
 from astrbot_plugin_private_companion import page_api_persona as page_api_persona_mod
+from astrbot_plugin_private_companion import page_api_persona_config as page_api_persona_config_mod
 from astrbot_plugin_private_companion.page_api import PrivateCompanionPageApi
 
 
@@ -41,7 +42,11 @@ class SpecificDeleteFeedbackTests(unittest.IsolatedAsyncioTestCase):
         # 两者都要 patch，否则搬到 mixin 的方法会因 request 未替身而报
         # "Not within a request context"。
         with contextlib.ExitStack() as stack:
-            for mod in (page_api_mod, page_api_persona_mod):
+            for mod in (
+                page_api_mod,
+                page_api_persona_mod,
+                page_api_persona_config_mod,
+            ):
                 stack.enter_context(patch.object(mod, "request", fake_request))
             return await method()
 
