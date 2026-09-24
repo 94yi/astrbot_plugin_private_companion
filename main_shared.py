@@ -339,3 +339,35 @@ def _strip_chain_plain_thinking(owner: Any, chain: list[Any]) -> None:
         except Exception:
             pass
 _PHOTO_TOOL_PROMPT_FORMAT_MARKER = "<!-- private_companion_prompt_format_req_v1 -->"
+
+# --- 由 tools/split_main_domain_v2.py --auto-promote 提升 (陪伴指令域) ---
+bookshelf_password_reset_actions = {
+    "重置夹层密码", "重设夹层密码", "重新生成夹层密码", "刷新夹层密码", "生成夹层密码",
+    "重置资料柜密码", "重设资料柜密码", "重新生成资料柜密码", "刷新资料柜密码", "生成资料柜密码",
+}
+companion_manual_query_actions = {"答疑", "排障", "诊断", "说明"}
+daily_outfit_generate_actions = {
+    "生成穿搭", "刷新穿搭", "重置穿搭",
+    "生成穿搭图", "刷新穿搭图", "重置穿搭图",
+    "重新生成穿搭", "重新生成穿搭图", "重生穿搭", "重生穿搭图",
+    "生成今日穿搭", "生成今日穿搭图", "生成每日穿搭", "生成每日穿搭图",
+}
+daily_schedule_cancel_actions = {"删除日程", "取消日程", "移除日程"}
+daily_schedule_regenerate_actions = {"重置日程", "生成日程", "刷新日程", "重新生成日程"}
+image_api_swap_actions = {
+    "切换生图API", "切换生图api", "交换生图API", "交换生图api",
+    "切换在线生图API", "切换在线生图api", "交换在线生图API", "交换在线生图api",
+    "切换图片API", "切换图片api", "交换图片API", "交换图片api",
+    "切换备用生图", "启用备用生图", "使用备用生图", "切到备用生图",
+    "切换备选生图", "启用备选生图", "使用备选生图", "切到备选生图",
+}
+photo_command_actions = {"生图", "画图", "绘图", "生成图片", "出图", "自拍", "拍照", "拍一张", "改图", "修图", "重绘", "P图", "p图"}
+qweather_location_bind_actions = {"绑定城市", "设置城市"}
+qweather_location_view_actions = {"查看城市", "当前城市", "天气城市"}
+qweather_location_unbind_actions = {"解绑城市", "清除城市"}
+qweather_location_actions = {
+    *qweather_location_bind_actions,
+    *qweather_location_view_actions,
+    *qweather_location_unbind_actions,
+}
+wakeup_alarm_actions = {"现实触及", "现实触及闹钟", "现实触及起床", "起床闹钟", "起床提醒", "蓝牙起床", "蓝牙闹钟"}

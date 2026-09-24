@@ -1740,6 +1740,12 @@ class Req036CompanionTests(unittest.TestCase):
         start = source.index("    async def companion_command(")
         end = source.index("    async def group_companion_command(", start)
         command = source[start:end]
+        # companion_command 的引导与尾段分派步骤已随域拆分搬到
+        # main_companion_command.py（按文件名排在 main.py 之后，切片取不到）。
+        # 断言需并入该域模块，否则搬走后会空转。
+        domain = ROOT / "main_companion_command.py"
+        if domain.exists():
+            command += domain.read_text(encoding="utf-8")
         self.assertNotIn("_req036_reject_unauthorized_private_event", command)
         self.assertIn('source="private_command"', command)
 
