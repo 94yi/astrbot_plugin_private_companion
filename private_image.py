@@ -40,7 +40,7 @@ from .conversation_prompt_section import (
     exact_text,
     render_prompt_sections,
 )
-from .helpers import _missing_optional_model_dependency, _safe_float, _safe_int, _single_line, _strip_internal_message_blocks, _strip_outbound_control_blocks, _today_key, _url_host_is_public
+from .helpers import _missing_optional_model_dependency, _now_ts, _safe_float, _safe_int, _single_line, _strip_internal_message_blocks, _strip_outbound_control_blocks, _today_key, _url_host_is_public
 from .persona_config import runtime_persona_setting
 from .segmented_message import (
     component_kind,
