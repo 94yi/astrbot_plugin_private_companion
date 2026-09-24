@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 import time
-from .page_api_shared import _page_api_host
+from .page_api_shared import _page_api_host, _page_api_host_request as request
 from typing import Any
 
 from .logging_util import get_module_logger
@@ -34,7 +34,7 @@ class PrivateCompanionPageApiDailyReviewMixin:
             return self._error(str(exc))
 
     async def run_daily_review(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         target_date = self._single_line(payload.get("date"), 16)
         if target_date and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", target_date):
             return self._error("巡视日期格式必须为 YYYY-MM-DD")
@@ -53,7 +53,7 @@ class PrivateCompanionPageApiDailyReviewMixin:
             return self._error(str(exc))
 
     async def update_daily_review_guidance(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         active = bool(payload.get("active", False))
         try:
             async with self.plugin._data_lock:

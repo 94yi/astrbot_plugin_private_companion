@@ -13,7 +13,7 @@ from .memo_notes import apply_memo_note_action, memo_note_due_state, memo_note_s
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from .page_api_shared import _page_api_host
+from .page_api_shared import _page_api_host, _page_api_host_request as request
 from typing import Any
 
 from .logging_util import get_module_logger
@@ -72,7 +72,7 @@ class PrivateCompanionPageApiMemoryRecallMixin:
             return self._exception_error(str(exc))
 
     async def update_memo_note(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         now = time.time()
         try:
             async with self.plugin._data_lock:

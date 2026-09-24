@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Any, Mapping
 from urllib.parse import quote, urlparse
 from quart import send_file
-from .page_api_shared import _page_api_host
+from .page_api_shared import _page_api_host, _page_api_host_request as request
 from .conversation_prompt_section import (
     PromptRenderMode,
     prompt_document,
@@ -231,9 +231,9 @@ class PrivateCompanionPageApiMediaMixin:
         return lock
     @staticmethod
     def _page_asset_prefix() -> str:
-        """Keep generated asset URLs on the transport serving this _page_api_host.request."""
+        """Keep generated asset URLs on the transport serving this request."""
         try:
-            if str(_page_api_host.request.path or "").startswith("/api/v1/"):
+            if str(request.path or "").startswith("/api/v1/"):
                 return "/api/v1"
         except RuntimeError:
             pass
@@ -375,7 +375,7 @@ class PrivateCompanionPageApiMediaMixin:
         detail = self._single_line(exc, 220)
         return detail or f"视觉模型调用失败（{exc.__class__.__name__}）"
     async def get_reaction_library_image_data(self) -> dict[str, Any]:
-        item_id = self._single_line(_page_api_host.request.args.get("id"), 64)
+        item_id = self._single_line(request.args.get("id"), 64)
         if not item_id:
             return self._error("缺少表情包 id")
         try:
@@ -386,8 +386,8 @@ class PrivateCompanionPageApiMediaMixin:
             return self._error(str(exc))
     async def list_image_cache(self) -> dict[str, Any]:
         try:
-            scope_filter = self._single_line(_page_api_host.request.args.get("scope"), 40)
-            keyword = self._single_line(_page_api_host.request.args.get("q"), 120).lower()
+            scope_filter = self._single_line(request.args.get("scope"), 40)
+            keyword = self._single_line(request.args.get("q"), 120).lower()
             limit = self._query_int("limit", 80, 1, 300)
             offset = self._query_int("offset", 0, 0, 100000)
             async with self.plugin._data_lock:
@@ -445,7 +445,7 @@ class PrivateCompanionPageApiMediaMixin:
             logger.error(f"获取图片缓存失败: {exc}", exc_info=True)
             return self._exception_error(str(exc))
     async def update_image_cache_item(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         key = self._single_line(payload.get("key"), 120)
         action = self._single_line(payload.get("action"), 20).lower() or "regenerate"
         if not key:
@@ -574,7 +574,7 @@ class PrivateCompanionPageApiMediaMixin:
             changed = True
         return changed
     async def _resolve_image_cache_preview_for_request(self) -> tuple[str, Path] | tuple[dict[str, Any], int]:
-        key = self._single_line(_page_api_host.request.args.get("key"), 120)
+        key = self._single_line(request.args.get("key"), 120)
         if not key:
             return self._error("缺少缓存 key")
         async with self.plugin._data_lock:
@@ -915,7 +915,7 @@ class PrivateCompanionPageApiMediaMixin:
     async def describe_wardrobe_image(self) -> dict[str, Any]:
         """Describe one garment image with the vision model for the wardrobe panel."""
 
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         if not isinstance(payload, dict):
             return self._error("请求体必须是 JSON 对象")
         describer = getattr(self.plugin, "_wardrobe_describe_image", None)
@@ -976,7 +976,7 @@ class PrivateCompanionPageApiMediaMixin:
     async def get_wardrobe_asset_image(self) -> dict[str, Any]:
         """Return one wardrobe asset as a data URL for the draft queue thumbnails."""
 
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         if not isinstance(payload, dict):
             return self._error("请求体必须是 JSON 对象")
         asset_id = self._single_line(payload.get("asset_id"), 80)
@@ -1012,14 +1012,14 @@ class PrivateCompanionPageApiMediaMixin:
             logger.warning("读取衣柜素材图片失败: %s", self._single_line(exc, 160))
             return self._exception_error("读取衣柜素材图片失败")
     async def upload_photo_reference(self) -> dict[str, Any]:
-        content_length = _page_api_host.request.content_length
+        content_length = request.content_length
         if content_length is not None:
             try:
                 if int(content_length) > PHOTO_REFERENCE_UPLOAD_MAX_REQUEST_BYTES:
                     return self._error("参考图上传请求体过大，请将图片控制在 12 MB 以内")
             except (TypeError, ValueError):
                 pass
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         if not isinstance(payload, dict):
             return self._error("请求体必须是 JSON 对象")
         decoded = self._decode_photo_reference_asset_data_url(
@@ -1117,7 +1117,7 @@ class PrivateCompanionPageApiMediaMixin:
             "size": stored_size,
         })
     async def get_photo_reference_image_data(self) -> dict[str, Any]:
-        item_id = self._single_line(_page_api_host.request.args.get("id"), 80)
+        item_id = self._single_line(request.args.get("id"), 80)
         if not item_id:
             return self._error("缺少参考图 id")
         try:
@@ -1183,7 +1183,7 @@ class PrivateCompanionPageApiMediaMixin:
             logger.error("owned reaction asset status failed")
             return self._exception_error("无法读取自有反应图素材状态")
     async def get_owned_reaction_asset_image_data(self) -> dict[str, Any]:
-        asset_id = self._single_line(_page_api_host.request.args.get("id"), 80)
+        asset_id = self._single_line(request.args.get("id"), 80)
         if not asset_id:
             return self._error("缺少素材 id")
         try:
@@ -1208,7 +1208,7 @@ class PrivateCompanionPageApiMediaMixin:
             return self._exception_error("无法读取自有反应图预览")
     async def compile_photo_reference_metadata(self) -> dict[str, Any]:
         """Compile editor answers without changing persisted configuration."""
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         if not isinstance(payload, dict):
             return self._error("请求体必须是对象")
         intent = payload.get("intent") or payload.get("answers") or payload
@@ -1505,7 +1505,7 @@ class PrivateCompanionPageApiMediaMixin:
         return rule_selection
     async def review_photo_reference_metadata(self) -> dict[str, Any]:
         """Cross-review redundant questionnaire evidence, then compile without saving."""
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         if not isinstance(payload, dict):
             return self._error("请求体必须是对象")
         questionnaire = payload.get("questionnaire") or payload.get("answers") or {}
@@ -1631,7 +1631,7 @@ class PrivateCompanionPageApiMediaMixin:
             return self._exception_error("审批后编译参考图元数据失败")
     async def run_photo_reference_selection_trial(self) -> dict[str, Any]:
         """Run a bounded selection trial; never invoke the production photo tool."""
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         if not isinstance(payload, dict):
             return self._error("请求体必须是对象")
         request_text = self._multi_line(
@@ -1874,23 +1874,23 @@ class PrivateCompanionPageApiMediaMixin:
             base["priority"] = self._clamp_int(payload.get("priority"), 0, -1000, 10000)
         return base
     async def list_reference_assets(self) -> dict[str, Any]:
-        raw_scope = _page_api_host.request.args.get("scope")
+        raw_scope = request.args.get("scope")
         owner_id = self._single_line(
-            _page_api_host.request.args.get("owner_id")
-            or _page_api_host.request.args.get("user_id")
-            or _page_api_host.request.args.get("knowledge_id")
-            or _page_api_host.request.args.get("role_name")
-            or _page_api_host.request.args.get("relationship_role"),
+            request.args.get("owner_id")
+            or request.args.get("user_id")
+            or request.args.get("knowledge_id")
+            or request.args.get("role_name")
+            or request.args.get("relationship_role"),
             120,
         )
         scope = normalize_reference_asset_scope(raw_scope)
-        if not scope and "/relationship/role/reference/" in str(_page_api_host.request.path or ""):
+        if not scope and "/relationship/role/reference/" in str(request.path or ""):
             scope = "relation_role"
-        if not scope and _page_api_host.request.args.get("user_id"):
+        if not scope and request.args.get("user_id"):
             scope = "relation_user"
-        if not scope and _page_api_host.request.args.get("knowledge_id"):
+        if not scope and request.args.get("knowledge_id"):
             scope = "knowledge"
-        if not scope and (_page_api_host.request.args.get("role_name") or _page_api_host.request.args.get("relationship_role")):
+        if not scope and (request.args.get("role_name") or request.args.get("relationship_role")):
             scope = "relation_role"
         if scope and owner_id:
             owner_id = normalize_reference_owner_id(scope, owner_id)
@@ -1921,7 +1921,7 @@ class PrivateCompanionPageApiMediaMixin:
         }
         return self._ok(response)
     async def get_reference_asset_image_data(self) -> dict[str, Any]:
-        asset = self._reference_asset_find(_page_api_host.request.args.get("id"))
+        asset = self._reference_asset_find(request.args.get("id"))
         if not asset:
             return self._error("参考资产不存在或已删除")
         path = self._reference_asset_local_path(asset)
@@ -1942,9 +1942,9 @@ class PrivateCompanionPageApiMediaMixin:
             logger.info("参考资产预览失败: type=%s", type(exc).__name__)
             return self._error("参考资产预览失败")
     async def upload_reference_asset(self) -> dict[str, Any]:
-        return await self._save_reference_asset(await _page_api_host.request.get_json(silent=True) or {}, existing=None)
+        return await self._save_reference_asset(await request.get_json(silent=True) or {}, existing=None)
     async def update_reference_asset(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         asset = self._reference_asset_find(payload.get("id"))
         if not asset:
             return self._error("参考资产不存在或已删除")
@@ -1960,7 +1960,7 @@ class PrivateCompanionPageApiMediaMixin:
             or (existing or {}).get("owner_id")
         )
         scope = normalize_reference_asset_scope(raw_scope)
-        if not scope and "/relationship/role/reference/" in str(_page_api_host.request.path or ""):
+        if not scope and "/relationship/role/reference/" in str(request.path or ""):
             scope = "relation_role"
         if not scope and payload.get("user_id"):
             scope = "relation_user"
@@ -2017,7 +2017,7 @@ class PrivateCompanionPageApiMediaMixin:
             data = deepcopy(self.plugin.data)
         return self._ok({"message": "已更新参考资产" if existing else "已上传参考资产", "asset": self._reference_asset_page_item(asset), "worldbook": self._worldbook_summary(data)})
     async def delete_reference_asset(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         asset_id = self._single_line(payload.get("id"), 80)
         if not asset_id:
             return self._error("缺少参考资产 id")
@@ -2247,12 +2247,12 @@ class PrivateCompanionPageApiMediaMixin:
         return scope, owner_id, title, note, tags, enabled
     async def list_photo_reference_assets(self) -> dict[str, Any]:
         try:
-            scope_raw = self._single_line(_page_api_host.request.args.get("scope"), 40)
+            scope_raw = self._single_line(request.args.get("scope"), 40)
             scope = self._normalize_photo_reference_asset_scope(scope_raw) if scope_raw else ""
             if scope_raw and not scope:
                 return self._error("scope 只支持 relation_user、group 或 knowledge")
-            owner_id = self._single_line(_page_api_host.request.args.get("owner_id"), 180)
-            include_disabled = self._photo_reference_asset_bool(_page_api_host.request.args.get("include_disabled"), True)
+            owner_id = self._single_line(request.args.get("owner_id"), 180)
+            include_disabled = self._photo_reference_asset_bool(request.args.get("include_disabled"), True)
             items = self._photo_reference_asset_page_items(
                 scope=scope,
                 owner_id=owner_id,
@@ -2271,7 +2271,7 @@ class PrivateCompanionPageApiMediaMixin:
             logger.error("获取参考资产列表失败: %s", exc, exc_info=True)
             return self._error(str(exc))
     async def get_photo_reference_asset_image_data(self) -> dict[str, Any]:
-        asset_id = self._single_line(_page_api_host.request.args.get("id") or _page_api_host.request.args.get("asset_id"), 80)
+        asset_id = self._single_line(request.args.get("id") or request.args.get("asset_id"), 80)
         if not asset_id:
             return self._error("缺少参考资产 id")
         try:
@@ -2297,7 +2297,7 @@ class PrivateCompanionPageApiMediaMixin:
             logger.error("获取参考资产预览失败: %s", exc, exc_info=True)
             return self._error(str(exc))
     async def upload_photo_reference_asset(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         if not isinstance(payload, dict):
             return self._error("请求体必须是 JSON 对象")
         decoded = self._decode_photo_reference_asset_data_url(
@@ -2345,7 +2345,7 @@ class PrivateCompanionPageApiMediaMixin:
                 saver(sections={"photo_reference_assets"})
             return self._ok({"asset": self._photo_reference_asset_page_item(item)})
     async def update_photo_reference_asset(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         if not isinstance(payload, dict):
             return self._error("请求体必须是 JSON 对象")
         asset_id = self._single_line(payload.get("id") or payload.get("asset_id"), 80)
@@ -2420,7 +2420,7 @@ class PrivateCompanionPageApiMediaMixin:
                 saver(sections={"photo_reference_assets"})
             return self._ok({"asset": self._photo_reference_asset_page_item(updated)})
     async def delete_photo_reference_asset(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         if not isinstance(payload, dict):
             return self._error("请求体必须是 JSON 对象")
         asset_id = self._single_line(payload.get("id") or payload.get("asset_id"), 80)
@@ -2482,7 +2482,7 @@ class PrivateCompanionPageApiMediaMixin:
             logger.error(f"获取图片缓存缩略图失败: {exc}", exc_info=True)
             return self._exception_error(str(exc))
     async def delete_image_cache_item(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         key = self._single_line(payload.get("key"), 120)
         if not key:
             return self._error("缺少缓存 key")
@@ -2503,7 +2503,7 @@ class PrivateCompanionPageApiMediaMixin:
             logger.error(f"删除图片缓存失败: {exc}", exc_info=True)
             return self._exception_error(str(exc))
     async def bulk_delete_image_cache_items(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         raw_keys = payload.get("keys")
         if not isinstance(raw_keys, list):
             return self._error("keys 必须是缓存 key 数组")
@@ -2611,7 +2611,7 @@ class PrivateCompanionPageApiMediaMixin:
         }
     async def swap_image_api_settings(self) -> dict[str, Any]:
         try:
-            payload = await _page_api_host.request.get_json(silent=True) or {}
+            payload = await request.get_json(silent=True) or {}
             force = self._normalize_bool_value(payload.get("force"))
             normalizer = getattr(self.plugin, "_normalize_external_image_api_endpoints", None)
             raw_endpoints = self._config_get_raw("external_image_api_endpoints", [])
@@ -3268,8 +3268,8 @@ class PrivateCompanionPageApiMediaMixin:
     async def get_image_debug(self) -> dict[str, Any]:
         """Return full recent image debug events only when the panel expands them."""
         try:
-            limit = self._int(_page_api_host.request.args.get("limit"), 240, 1, 1000)
-            trace_id = self._single_line(_page_api_host.request.args.get("trace"), 80)
+            limit = self._int(request.args.get("limit"), 240, 1, 1000)
+            trace_id = self._single_line(request.args.get("trace"), 80)
             payload = self._recent_photo_generation_debug(
                 event_limit=limit,
                 trace_id=trace_id,
@@ -3316,7 +3316,7 @@ class PrivateCompanionPageApiMediaMixin:
             logger.warning("获取生图 API 状态失败: %s", self._single_line(exc, 160), exc_info=True)
             return self._exception_error(str(exc))
     async def test_image_api_endpoint(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         request_id = secrets.token_hex(6)
         started = time.time()
         logger.info("[test:%s][type:image_api_endpoint] 开始执行测试", request_id)
@@ -4165,9 +4165,9 @@ class PrivateCompanionPageApiMediaMixin:
             logger.error(f"读取资料柜图片数据失败: {exc}", exc_info=True)
             return self._exception_error(str(exc))
     async def _resolve_bookshelf_image_path_from_request(self) -> Path | dict[str, str]:
-        album_id = self._single_line(_page_api_host.request.args.get("album_id"), 40)
-        page_index = self._int(_page_api_host.request.args.get("page"))
-        cover_requested = str(_page_api_host.request.args.get("cover") or "").lower() in {"1", "true", "yes"}
+        album_id = self._single_line(request.args.get("album_id"), 40)
+        page_index = self._int(request.args.get("page"))
+        cover_requested = str(request.args.get("cover") or "").lower() in {"1", "true", "yes"}
         if not album_id or (page_index < 1 and not cover_requested):
             return {"error": "缺少图片参数"}
         try:

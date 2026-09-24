@@ -16,7 +16,7 @@ from copy import copy, deepcopy
 from datetime import date, datetime, timedelta
 from typing import Any, Mapping
 from quart import send_file
-from .page_api_shared import _page_api_host
+from .page_api_shared import _page_api_host, _page_api_host_request as request
 from .helpers import _MISSING, _flat_get, _normalize_timezone_name, _normalize_timezone_setting, _path_text, _redact_outbound_secrets, _safe_int, _set_into_config, _strip_internal_message_blocks, _text_looks_garbled, _text_similarity, _today_key, normalize_bot_relationship_cards
 from .expression_scope_ownership import (
     ExpressionScopeError,
@@ -1278,7 +1278,7 @@ class PrivateCompanionPageApiExpressionMixin:
             json.dumps(material, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
         ).hexdigest()
     async def share_expression_library(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         raw_items = payload.get("items")
         if raw_items is not None and not isinstance(raw_items, list):
             return self._error("分享范围格式无效")
@@ -1362,7 +1362,7 @@ class PrivateCompanionPageApiExpressionMixin:
             logger.error(f"生成表达分享包失败: {exc}", exc_info=True)
             return self._exception_error("生成表达分享包失败")
     async def preview_expression_library_import(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         try:
             normalized = self._normalize_expression_share_pack(payload.get("package"))
             async with self.plugin._data_lock:
@@ -1395,7 +1395,7 @@ class PrivateCompanionPageApiExpressionMixin:
             logger.error(f"预览表达导入失败: {exc}", exc_info=True)
             return self._exception_error("预览表达导入失败")
     async def apply_expression_library_import(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         destination = self._single_line(payload.get("destination"), 16).lower() or "pending"
         if destination not in {"pending", "learned"}:
             return self._error("导入方式无效")
@@ -1751,7 +1751,7 @@ class PrivateCompanionPageApiExpressionMixin:
         try:
             async with self.plugin._data_lock:
                 # Read endpoints may prepare a disposable view, but must never repair
-                # or persist the live runtime state as a side effect of a GET _page_api_host.request.
+                # or persist the live runtime state as a side effect of a GET request.
                 snapshot = deepcopy(self.plugin.data)
                 normalizer = getattr(self.plugin, "_normalize_group_expression_profile", None)
                 pruner = getattr(self.plugin, "_prune_invalid_expression_rules", None)
@@ -1785,7 +1785,7 @@ class PrivateCompanionPageApiExpressionMixin:
             logger.error(f"获取统一表达学习库失败: {exc}", exc_info=True)
             return self._exception_error("获取统一表达学习库失败")
     async def update_expression_library(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         source_type = self._single_line(payload.get("source_type"), 16)
         source_id = self._single_line(payload.get("source_id"), 80)
         action = self._single_line(payload.get("expression_action"), 40)

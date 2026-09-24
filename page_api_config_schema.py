@@ -14,7 +14,7 @@ from .config_migration import _ensure_config_parent_dir
 from .helpers import _MISSING, _flat_get, _set_into_config
 from copy import deepcopy
 from pathlib import Path
-from .page_api_shared import _page_api_host
+from .page_api_shared import _page_api_host, _page_api_host_request as request
 from typing import Any
 
 from .logging_util import get_module_logger
@@ -28,7 +28,7 @@ class PrivateCompanionPageApiConfigSchemaMixin:
 
 
     async def apply_preset(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         name = str(payload.get("name", "")).strip()
         presets = self._presets()
         if name not in presets:
@@ -56,7 +56,7 @@ class PrivateCompanionPageApiConfigSchemaMixin:
             return self._exception_error("应用预设失败")
 
     async def update_external_ability(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         normalizer = getattr(self.plugin, "_normalize_external_ability_name", None)
         name = self._single_line(payload.get("name"), 80)
         name = normalizer(name) if callable(normalizer) else name

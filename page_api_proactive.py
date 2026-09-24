@@ -14,7 +14,7 @@ from copy import copy, deepcopy
 from datetime import date, datetime, timedelta
 from typing import Any, Mapping
 from quart import send_file
-from .page_api_shared import _page_api_host
+from .page_api_shared import _page_api_host, _page_api_host_request as request
 from .constants import (
     DEFAULT_DAILY_PLAN_ITEMS,
     PAGE_FONT_NAMES,
@@ -34,7 +34,7 @@ class PrivateCompanionPageApiProactiveMixin:
 
     async def update_proactive_only_unlock(self) -> dict[str, Any]:
         try:
-            payload = await _page_api_host.request.get_json(silent=True) or {}
+            payload = await request.get_json(silent=True) or {}
             key = self._single_line(payload.get("key"), 80)
             action = self._single_line(payload.get("action"), 20) or "unlock"
             sync_related = bool(payload.get("sync_related"))
@@ -57,7 +57,7 @@ class PrivateCompanionPageApiProactiveMixin:
             logger.error(f"更新主动专用临时放行失败: {exc}", exc_info=True)
             return self._exception_error(str(exc))
     async def delete_proactive_candidate(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         candidate_id = self._single_line(payload.get("candidate_id") or payload.get("id"), 40)
         if not candidate_id:
             return self._error("缺少 candidate_id")
@@ -119,7 +119,7 @@ class PrivateCompanionPageApiProactiveMixin:
             logger.error(f"删除主动候选失败: {exc}", exc_info=True)
             return self._exception_error(str(exc))
     async def prune_proactive_candidates(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         user_id = self._single_line(payload.get("user_id"), 40)
         if not user_id:
             return self._error("缺少 user_id")

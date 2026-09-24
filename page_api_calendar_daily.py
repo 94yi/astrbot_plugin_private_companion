@@ -25,7 +25,7 @@ from datetime import date, datetime, timedelta
 from typing import Any
 
 from .logging_util import get_module_logger
-from .page_api_shared import _page_api_host
+from .page_api_shared import _page_api_host, _page_api_host_request as request
 
 logger = get_module_logger(__name__)
 
@@ -61,9 +61,9 @@ class PrivateCompanionPageApiCalendarDailyMixin:
 
     def _calendar_page_range(self) -> tuple[date, date]:
         """Resolve a bounded month/range query for calendar projections."""
-        month = self._single_line(_page_api_host.request.args.get("month"), 16)
-        start_raw = _page_api_host.request.args.get("start") or _page_api_host.request.args.get("from") or _page_api_host.request.args.get("date")
-        end_raw = _page_api_host.request.args.get("end") or _page_api_host.request.args.get("to")
+        month = self._single_line(request.args.get("month"), 16)
+        start_raw = request.args.get("start") or request.args.get("from") or request.args.get("date")
+        end_raw = request.args.get("end") or request.args.get("to")
         if month:
             try:
                 month_start = date.fromisoformat(f"{month[:7]}-01")
@@ -264,7 +264,7 @@ class PrivateCompanionPageApiCalendarDailyMixin:
         }
 
     async def confirm_calendar_candidate(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         candidate_id = self._single_line(payload.get("candidate_id") or payload.get("id"), 160) if isinstance(payload, dict) else ""
         decide = getattr(self.plugin, "_agenda_decide_calendar_candidate", None)
         if not candidate_id or not callable(decide):
@@ -286,7 +286,7 @@ class PrivateCompanionPageApiCalendarDailyMixin:
             return self._exception_error("确认候选失败")
 
     async def reject_calendar_candidate(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         candidate_id = self._single_line(payload.get("candidate_id") or payload.get("id"), 160) if isinstance(payload, dict) else ""
         decide = getattr(self.plugin, "_agenda_decide_calendar_candidate", None)
         if not candidate_id or not callable(decide):
@@ -336,7 +336,7 @@ class PrivateCompanionPageApiCalendarDailyMixin:
         })
 
     async def preview_calendar(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         record = payload.get("record") if isinstance(payload, dict) and isinstance(payload.get("record"), dict) else payload
         if not isinstance(record, dict):
             return self._error("日历记录格式无效")
@@ -364,7 +364,7 @@ class PrivateCompanionPageApiCalendarDailyMixin:
             return self._exception_error("预览日历失败")
 
     async def upsert_calendar(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         record = payload.get("record") if isinstance(payload, dict) and isinstance(payload.get("record"), dict) else payload
         if not isinstance(record, dict):
             return self._error("日历记录格式无效")
@@ -386,7 +386,7 @@ class PrivateCompanionPageApiCalendarDailyMixin:
             return self._exception_error("保存日历失败")
 
     async def cancel_calendar(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         calendar_id = self._single_line(
             payload.get("calendar_id") or payload.get("id") or payload.get("record_id"),
             160,

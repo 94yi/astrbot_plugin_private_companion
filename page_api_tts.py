@@ -19,7 +19,7 @@ from types import SimpleNamespace
 from typing import Any
 
 from .logging_util import get_module_logger
-from .page_api_shared import _page_api_host
+from .page_api_shared import _page_api_host, _page_api_host_request as request
 
 logger = get_module_logger(__name__)
 
@@ -736,7 +736,7 @@ class PrivateCompanionPageApiTtsMixin:
             return self._error(self._single_line(exc, 240))
 
     async def create_tts_provider_config(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         provider_type = self._single_line(payload.get("type"), 80)
         provider_id = self._single_line(payload.get("id"), 80)
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,79}", provider_id):
@@ -785,7 +785,7 @@ class PrivateCompanionPageApiTtsMixin:
         raise ValueError("无法生成不重复的语种专用 Provider ID")
 
     async def clone_tts_provider_config(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         source_provider_id = self._single_line(payload.get("source_provider_id"), 160)
         language = self._single_line(payload.get("language"), 8).lower()
         incoming = payload.get("config") if isinstance(payload.get("config"), dict) else {}
@@ -843,7 +843,7 @@ class PrivateCompanionPageApiTtsMixin:
             return self._error(self._single_line(_redact_outbound_secrets(str(exc)), 240))
 
     async def update_tts_provider_config(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         provider_id = self._single_line(payload.get("provider_id"), 160)
         incoming = payload.get("config") if isinstance(payload.get("config"), dict) else {}
         if not provider_id:
@@ -875,7 +875,7 @@ class PrivateCompanionPageApiTtsMixin:
             return self._error(self._single_line(_redact_outbound_secrets(str(exc)), 240))
 
     async def test_tts_provider_config(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         provider_id = self._single_line(payload.get("provider_id"), 160)
         request_id = secrets.token_hex(6)
         start = time.time()

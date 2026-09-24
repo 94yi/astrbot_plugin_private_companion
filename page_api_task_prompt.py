@@ -17,7 +17,7 @@ from .task_prompt_registry import (
     validate_task_prompt_override,
 )
 from copy import deepcopy
-from .page_api_shared import _page_api_host
+from .page_api_shared import _page_api_host, _page_api_host_request as request
 from typing import Any, Mapping
 
 from .logging_util import get_module_logger
@@ -148,7 +148,7 @@ class PrivateCompanionPageApiTaskPromptMixin:
 
     async def update_task_prompts(self) -> dict[str, Any]:
         """Save plugin-internal task prompt additions without touching chat prompts."""
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         if not isinstance(payload, Mapping):
             return self._error("任务提示词请求格式无效")
         async with self._task_prompt_update_lock():

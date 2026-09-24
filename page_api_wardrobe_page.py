@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from .page_api_shared import _page_api_host
+from .page_api_shared import _page_api_host, _page_api_host_request as request
 from typing import Any
 
 from .logging_util import get_module_logger
@@ -27,7 +27,7 @@ class PrivateCompanionPageApiWardrobePageMixin:
         can refresh it freely while the administrator tunes the settings.
         """
 
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         if not isinstance(payload, dict):
             return self._error("请求体必须是 JSON 对象")
         preview = getattr(self.plugin, "_wardrobe_outfit_preview", None)

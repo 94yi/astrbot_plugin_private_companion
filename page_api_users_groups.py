@@ -11,7 +11,7 @@ from copy import deepcopy
 from datetime import datetime
 from typing import Any
 
-from .page_api_shared import _page_api_host
+from .page_api_shared import _page_api_host, _page_api_host_request as request
 
 from .helpers import _safe_int
 from .companion_interaction_expression import allowed_expression_bands, current_interaction_projection
@@ -247,7 +247,7 @@ class PrivateCompanionPageApiUsersGroupsMixin:
         }
 
     async def update_pending_identity_review(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True)
+        payload = await request.get_json(silent=True)
         if not isinstance(payload, dict):
             return self._error("请求体必须是 JSON 对象")
         user_id = self._single_line(payload.get("user_id"), 160)
@@ -443,7 +443,7 @@ class PrivateCompanionPageApiUsersGroupsMixin:
             logger.error(f"获取用户列表失败: {exc}", exc_info=True)
             return self._error(str(exc))
     async def get_user(self) -> dict[str, Any]:
-        user_id = str(_page_api_host.request.args.get("user_id", "")).strip()
+        user_id = str(request.args.get("user_id", "")).strip()
         if not user_id:
             return self._error("缺少 user_id")
         try:
@@ -487,7 +487,7 @@ class PrivateCompanionPageApiUsersGroupsMixin:
             detail["expression_decision"] = relationship_panel["expression_decision"]
             detail["p4_runtime"] = self._p4_page_status_projection()
             detail["emotion_trace_summary"] = emotion_trace_summary(user, limit=20)
-            trace_id = self._single_line(_page_api_host.request.args.get("trace_id", ""), 96)
+            trace_id = self._single_line(request.args.get("trace_id", ""), 96)
             if trace_id:
                 detail["emotion_trace"] = build_emotion_trace_projection(
                     user,
@@ -530,7 +530,7 @@ class PrivateCompanionPageApiUsersGroupsMixin:
             logger.error(f"获取用户详情失败: {exc}", exc_info=True)
             return self._error(str(exc))
     async def link_unified_identity(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True)
+        payload = await request.get_json(silent=True)
         if not isinstance(payload, dict):
             return self._error("请求体必须是 JSON 对象")
         person_id = self._single_line(payload.get("person_id"), 80)
@@ -618,7 +618,7 @@ class PrivateCompanionPageApiUsersGroupsMixin:
             return self._error("统一身份重新关联失败")
 
     async def unlink_unified_identity(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True)
+        payload = await request.get_json(silent=True)
         if not isinstance(payload, dict):
             return self._error("请求体必须是 JSON 对象")
         person_id = self._single_line(payload.get("person_id"), 80)
@@ -691,7 +691,7 @@ class PrivateCompanionPageApiUsersGroupsMixin:
             return self._error("统一身份解绑失败")
 
     async def archive_unified_person(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True)
+        payload = await request.get_json(silent=True)
         if not isinstance(payload, dict):
             return self._error("请求体必须是 JSON 对象")
         person_id = self._single_line(payload.get("person_id"), 80)
@@ -725,7 +725,7 @@ class PrivateCompanionPageApiUsersGroupsMixin:
             return self._error("人物归档失败")
 
     async def delete_unified_person(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True)
+        payload = await request.get_json(silent=True)
         if not isinstance(payload, dict):
             return self._error("请求体必须是 JSON 对象")
         person_id = self._single_line(payload.get("person_id"), 80)
@@ -756,7 +756,7 @@ class PrivateCompanionPageApiUsersGroupsMixin:
             return self._error("人物删除失败")
 
     async def preview_unified_identity_merge(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True)
+        payload = await request.get_json(silent=True)
         if not isinstance(payload, dict):
             return self._error("请求体必须是 JSON 对象")
         source_person_id = self._single_line(payload.get("source_person_id"), 80)
@@ -779,7 +779,7 @@ class PrivateCompanionPageApiUsersGroupsMixin:
             return self._error("统一人物合并预览失败")
 
     async def update_user(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True)
+        payload = await request.get_json(silent=True)
         if not isinstance(payload, dict):
             return self._error("请求体必须是 JSON 对象")
         user_id = str(payload.get("user_id", "")).strip()
@@ -1184,7 +1184,7 @@ class PrivateCompanionPageApiUsersGroupsMixin:
             return self._error(str(exc))
 
     async def delete_user(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         user_id = str(payload.get("user_id", "")).strip()
         if not user_id:
             return self._error("缺少 user_id")
@@ -1716,7 +1716,7 @@ class PrivateCompanionPageApiUsersGroupsMixin:
             if changed:
                 self.plugin._save_data_sync(sections={"groups"})
     async def get_group(self) -> dict[str, Any]:
-        group_id = self._normalize_page_group_id(_page_api_host.request.args.get("group_id", ""))
+        group_id = self._normalize_page_group_id(request.args.get("group_id", ""))
         if not group_id:
             return self._error("缺少 group_id")
         try:
@@ -1756,7 +1756,7 @@ class PrivateCompanionPageApiUsersGroupsMixin:
             return self._error(str(exc))
 
     async def get_group_member_safety(self) -> dict[str, Any]:
-        group_id = self._normalize_page_group_id(_page_api_host.request.args.get("group_id", ""))
+        group_id = self._normalize_page_group_id(request.args.get("group_id", ""))
         if not group_id:
             return self._error("缺少 group_id")
         try:
@@ -1779,7 +1779,7 @@ class PrivateCompanionPageApiUsersGroupsMixin:
             return self._error(str(exc))
 
     async def update_group_member_safety(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         group_id = self._normalize_page_group_id(payload.get("group_id", ""))
         user_id = str(payload.get("user_id", "")).strip()
         action = str(payload.get("action", "")).strip().lower()
@@ -1810,7 +1810,7 @@ class PrivateCompanionPageApiUsersGroupsMixin:
             return self._error(str(exc))
 
     async def update_group(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         group_id = self._normalize_page_group_id(payload.get("group_id", ""))
         if not group_id:
             return self._error("缺少 group_id")
@@ -1914,7 +1914,7 @@ class PrivateCompanionPageApiUsersGroupsMixin:
             return self._error(str(exc))
 
     async def delete_group(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         group_id = self._normalize_page_group_id(payload.get("group_id", ""))
         if not group_id:
             return self._error("缺少 group_id")
@@ -2031,7 +2031,7 @@ class PrivateCompanionPageApiUsersGroupsMixin:
             return self._error(str(exc))
 
     async def update_group_slang(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         group_id = self._normalize_page_group_id(payload.get("group_id", ""))
         term = self._single_line(payload.get("term"), 40)
         if not group_id:

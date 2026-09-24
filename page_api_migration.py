@@ -17,7 +17,7 @@ from copy import copy, deepcopy
 from pathlib import Path
 from typing import Any, Mapping
 from quart import send_file
-from .page_api_shared import _page_api_host
+from .page_api_shared import _page_api_host, _page_api_host_request as request
 from .config_migration import _config_root_mapping, _ensure_config_parent_dir
 from .helpers import _MISSING, _flat_get, _normalize_timezone_name, _normalize_timezone_setting, _path_text, _redact_outbound_secrets, _safe_int, _set_into_config, _strip_internal_message_blocks, _text_looks_garbled, _text_similarity, _today_key, normalize_bot_relationship_cards
 from .story_authority import (
@@ -62,7 +62,7 @@ class PrivateCompanionPageApiMigrationMixin:
             return self._ok({"version": version, "dismissed": False, "persistent": False})
     async def update_extension_migration_notice(self) -> dict[str, Any]:
         """Persist the user's choice so embedded Page containers do not re-show it."""
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         version = self._single_line(payload.get("version"), 40) or EXTENSION_MIGRATION_NOTICE_VERSION
         if version != EXTENSION_MIGRATION_NOTICE_VERSION:
             return self._error("无效的迁移提示版本")
@@ -101,7 +101,7 @@ class PrivateCompanionPageApiMigrationMixin:
             logger.error(f"读取配置备份列表失败: {exc}", exc_info=True)
             return self._exception_error(str(exc))
     async def restore_migration_backup(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         try:
             backup_id = self._single_line(payload.get("id") or payload.get("name"), 160)
             path = self._resolve_migration_backup_path(backup_id)
@@ -120,7 +120,7 @@ class PrivateCompanionPageApiMigrationMixin:
             logger.error(f"恢复配置备份失败: {exc}", exc_info=True)
             return self._exception_error(str(exc))
     async def preview_migration_config_import(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         try:
             package = self._extract_migration_package(
                 payload,
@@ -134,7 +134,7 @@ class PrivateCompanionPageApiMigrationMixin:
             logger.error(f"预览配置导入失败: {exc}", exc_info=True)
             return self._exception_error(str(exc))
     async def apply_migration_config_import(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         try:
             package = self._extract_migration_package(
                 payload,
@@ -154,7 +154,7 @@ class PrivateCompanionPageApiMigrationMixin:
             logger.error(f"应用配置导入失败: {exc}", exc_info=True)
             return self._exception_error(str(exc))
     def _migration_export_options_from_request(self) -> set[str]:
-        raw = _page_api_host.request.args.get("sections") or ""
+        raw = request.args.get("sections") or ""
         if not raw:
             return {"basic", "relations", "food_skills"}
         options = {part.strip().lower() for part in re.split(r"[,，\s]+", raw) if part.strip()}

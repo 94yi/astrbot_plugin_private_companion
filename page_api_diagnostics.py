@@ -17,7 +17,7 @@ import uuid
 from copy import copy, deepcopy
 from typing import Any, Mapping
 from quart import send_file
-from .page_api_shared import _page_api_host
+from .page_api_shared import _page_api_host, _page_api_host_request as request
 from .conversation_prompt_section import (
     PromptRenderMode,
     prompt_section,
@@ -1024,7 +1024,7 @@ class PrivateCompanionPageApiDiagnosticsMixin:
                     active_counts[key] = active_counts.get(key, 0) + 1
         return [{**record, "current_count": active_counts.get(record["key"], 0)} for record in records]
     async def update_troubleshooting_warning_suppression(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         action = self._single_line(payload.get("action"), 24).lower()
         if action not in {"suppress", "restore", "restore_all"}:
             return self._error("action 只能是 suppress、restore 或 restore_all")
@@ -1389,7 +1389,7 @@ class PrivateCompanionPageApiDiagnosticsMixin:
         item["diagnostic_entries"] = entries[:32]
         return item
     async def run_troubleshooting_test(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         test_type = self._single_line(payload.get("type"), 40)
         request_id = secrets.token_hex(6)
         payload["_test_request_id"] = request_id

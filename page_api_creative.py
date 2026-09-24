@@ -27,7 +27,7 @@ from .wardrobe import WARDROBE_MAX_DESCRIPTION, WARDROBE_MAX_NAME, WARDROBE_MAX_
 from copy import deepcopy
 from pathlib import Path
 from quart import send_file
-from .page_api_shared import _page_api_host
+from .page_api_shared import _page_api_host, _page_api_host_request as request
 from typing import Any
 from urllib.parse import quote
 
@@ -142,7 +142,7 @@ class PrivateCompanionPageApiCreativeMixin:
     async def confirm_wardrobe_draft(self) -> dict[str, Any]:
         """Apply one wardrobe draft, optionally overriding name / description / slot."""
 
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         if not isinstance(payload, dict):
             return self._error("请求体必须是 JSON 对象")
         confirmer = getattr(self.plugin, "_wardrobe_confirm_draft", None)
@@ -177,7 +177,7 @@ class PrivateCompanionPageApiCreativeMixin:
     async def reject_wardrobe_draft(self) -> dict[str, Any]:
         """Reject one wardrobe draft; only the asset status changes."""
 
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         if not isinstance(payload, dict):
             return self._error("请求体必须是 JSON 对象")
         rejecter = getattr(self.plugin, "_wardrobe_reject_draft", None)
@@ -320,7 +320,7 @@ class PrivateCompanionPageApiCreativeMixin:
         return lines[:10]
 
     async def update_skill_growth(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         skill_id = self._single_line(payload.get("id"), 40)
         name = self._single_line(payload.get("name"), 32)
         if not skill_id and not name:
@@ -596,7 +596,7 @@ class PrivateCompanionPageApiCreativeMixin:
         }
 
     async def test_provider(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         key = str(payload.get("key", "")).strip()
         provider_id = self._single_line(payload.get("provider_id"), 160)
         if key and key not in self._allowed_provider_keys():
@@ -922,7 +922,7 @@ class PrivateCompanionPageApiCreativeMixin:
         }
 
     async def get_creative_project_cover(self):
-        project_id = self._single_line(_page_api_host.request.args.get("id"), 32)
+        project_id = self._single_line(request.args.get("id"), 32)
         if not project_id:
             return self._error("缺少 id")
         async with self.plugin._data_lock:
@@ -939,7 +939,7 @@ class PrivateCompanionPageApiCreativeMixin:
         return response
 
     async def get_creative_project_cover_data(self) -> dict[str, Any]:
-        project_id = self._single_line(_page_api_host.request.args.get("id"), 32)
+        project_id = self._single_line(request.args.get("id"), 32)
         if not project_id:
             return self._error("缺少 id")
         async with self.plugin._data_lock:
@@ -968,7 +968,7 @@ class PrivateCompanionPageApiCreativeMixin:
             return self._exception_error("读取创作封面数据失败")
 
     async def get_creative_project(self) -> dict[str, Any]:
-        project_id = str(_page_api_host.request.args.get("id", "")).strip()
+        project_id = str(request.args.get("id", "")).strip()
         if not project_id:
             return self._error("缺少 id")
         try:
@@ -985,7 +985,7 @@ class PrivateCompanionPageApiCreativeMixin:
 
     @story_legacy_operation("page.creative.project-update")
     async def update_creative_project(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         project_id = str(payload.get("id", "")).strip()
         if not project_id:
             return self._error("缺少 id")
@@ -1069,7 +1069,7 @@ class PrivateCompanionPageApiCreativeMixin:
 
     @story_legacy_operation("page.creative.chunk-update")
     async def update_creative_chunk(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         project_id = str(payload.get("id", "")).strip()
         chunk_index = _safe_int(payload.get("chunk_index"), -1, -1)
         text = str(payload.get("text", "")).strip()
@@ -1093,7 +1093,7 @@ class PrivateCompanionPageApiCreativeMixin:
 
     @story_legacy_operation("page.creative.outline-update")
     async def update_creative_outline(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         project_id = str(payload.get("id", "")).strip()
         outline_text = str(payload.get("outline", "")).strip()
         if not project_id:
@@ -1112,7 +1112,7 @@ class PrivateCompanionPageApiCreativeMixin:
 
     @story_legacy_operation("page.creative.characters-update")
     async def update_creative_characters(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         project_id = str(payload.get("id", "")).strip()
         raw_characters = payload.get("characters")
         if not project_id:
@@ -1140,7 +1140,7 @@ class PrivateCompanionPageApiCreativeMixin:
 
     @story_legacy_operation("page.creative.reanalyze")
     async def reanalyze_creative_project(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         project_id = str(payload.get("id", "")).strip()
         if not project_id:
             return self._error("缺少 id")
@@ -1186,7 +1186,7 @@ class PrivateCompanionPageApiCreativeMixin:
 
     @story_legacy_operation("page.creative.memory-rebuild")
     async def rebuild_creative_memory(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         project_id = str(payload.get("id", "")).strip()
         if not project_id:
             return self._error("缺少 id")
@@ -1204,7 +1204,7 @@ class PrivateCompanionPageApiCreativeMixin:
 
     @story_legacy_operation("page.creative.project-delete")
     async def delete_creative_project(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         project_id = str(payload.get("id", "")).strip()
         if not project_id:
             return self._error("缺少 id")

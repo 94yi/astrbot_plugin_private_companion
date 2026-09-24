@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from pathlib import Path
-from .page_api_shared import _page_api_host
+from .page_api_shared import _page_api_host, _page_api_host_request as request
 from typing import Any
 
 
@@ -93,7 +93,7 @@ class PrivateCompanionPageApiUtilSmallMixin:
 
     @staticmethod
     def _query_int(name: str, default: int, minimum: int, maximum: int) -> int:
-        raw = _page_api_host.request.args.get(name, default)
+        raw = request.args.get(name, default)
         try:
             value = int(raw)
         except (TypeError, ValueError):

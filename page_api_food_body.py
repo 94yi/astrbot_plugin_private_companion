@@ -10,7 +10,7 @@ import asyncio
 import hashlib
 import re
 import time
-from .page_api_shared import _page_api_host
+from .page_api_shared import _page_api_host, _page_api_host_request as request
 from typing import Any
 
 from .logging_util import get_module_logger
@@ -151,7 +151,7 @@ class PrivateCompanionPageApiFoodBodyMixin:
         return payload
 
     async def update_food_menu(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         item_id = self._single_line(payload.get("id"), 48)
         name = self._single_line(payload.get("name"), 40)
 
@@ -258,7 +258,7 @@ class PrivateCompanionPageApiFoodBodyMixin:
             return self._exception_error("更新吃什么候选失败")
 
     async def bulk_update_food_menu(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         raw_text = str(payload.get("text") or payload.get("items") or "").strip()
         favorite = self._food_menu_parse_bool(payload.get("favorite"), False)
         hidden = self._food_menu_parse_bool(payload.get("hidden"), False)
@@ -353,7 +353,7 @@ class PrivateCompanionPageApiFoodBodyMixin:
             return self._exception_error("批量更新吃什么候选失败")
 
     async def bulk_delete_food_menu(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         raw_ids = payload.get("ids") if isinstance(payload.get("ids"), list) else []
         item_ids: list[str] = []
         for raw_id in raw_ids[:160]:

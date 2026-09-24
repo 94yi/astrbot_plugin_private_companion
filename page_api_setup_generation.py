@@ -11,7 +11,7 @@ import time
 import uuid
 from .helpers import _today_key
 from copy import deepcopy
-from .page_api_shared import _page_api_host
+from .page_api_shared import _page_api_host, _page_api_host_request as request
 from typing import Any
 
 from .logging_util import get_module_logger
@@ -27,7 +27,7 @@ class PrivateCompanionPageApiSetupGenerationMixin:
     async def run_setup_daily_generation(self) -> dict[str, Any]:
         """Run setup-guide daily plan generation; current detail is optional because it is slow."""
         try:
-            payload = await _page_api_host.request.get_json(silent=True) or {}
+            payload = await request.get_json(silent=True) or {}
         except Exception:
             payload = {}
         generate_schedule = self._normalize_bool_value(payload.get("generate_schedule", True))
@@ -131,7 +131,7 @@ class PrivateCompanionPageApiSetupGenerationMixin:
 
     async def regenerate_daily_detail_segment(self) -> dict[str, Any]:
         try:
-            payload = await _page_api_host.request.get_json(silent=True) or {}
+            payload = await request.get_json(silent=True) or {}
         except Exception:
             payload = {}
         key = self._single_line(payload.get("key"), 120)

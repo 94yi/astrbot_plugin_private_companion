@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from .logging_util import get_module_logger
-from .page_api_shared import _page_api_host
+from .page_api_shared import _page_api_host, _page_api_host_request as request
 
 logger = get_module_logger(__name__)
 
@@ -37,7 +37,7 @@ class PrivateCompanionPageApiBookshelfMixin:
 
 
     async def unlock_bookshelf(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         password = str(payload.get("password", "")).strip()
         try:
             expected = await self.plugin._ensure_bookshelf_password_async()
@@ -61,7 +61,7 @@ class PrivateCompanionPageApiBookshelfMixin:
         persisted record contains only a SHA-256 token digest, never the bearer token
         itself; the raw token remains available only in the current request/runtime map.
         """
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         access_token = (self._bookshelf_request_token(payload))
         if not self._bookshelf_access_token_valid(access_token):
             return self._error(self._bookshelf_access_error()["error"])
@@ -397,13 +397,13 @@ class PrivateCompanionPageApiBookshelfMixin:
             token = self._single_line(payload.get("access_token") or payload.get("token"), 120)
             if token:
                 return token
-        return self._single_line(_page_api_host.request.args.get("access_token") or _page_api_host.request.args.get("token"), 120)
+        return self._single_line(request.args.get("access_token") or request.args.get("token"), 120)
 
     def _bookshelf_access_error(self) -> dict[str, str]:
         return {"error": "夹层访问已过期，请重新输入密码打开抽屉"}
 
     async def delete_bookshelf_item(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         access_token = (self._bookshelf_request_token(payload))
         if not self._bookshelf_access_token_valid(access_token):
             return self._error(self._bookshelf_access_error()["error"])
@@ -679,7 +679,7 @@ class PrivateCompanionPageApiBookshelfMixin:
                 pass
 
     async def update_bookshelf_reading_state(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         access_token = (self._bookshelf_request_token(payload))
         if not self._bookshelf_access_token_valid(access_token):
             return self._error(self._bookshelf_access_error()["error"])
@@ -726,7 +726,7 @@ class PrivateCompanionPageApiBookshelfMixin:
             return self._exception_error(str(exc))
 
     async def rate_bookshelf_item(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         access_token = (self._bookshelf_request_token(payload))
         if not self._bookshelf_access_token_valid(access_token):
             return self._error(self._bookshelf_access_error()["error"])
@@ -836,7 +836,7 @@ class PrivateCompanionPageApiBookshelfMixin:
         return merged
 
     async def update_bookshelf_item_tags(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         access_token = (self._bookshelf_request_token(payload))
         if not self._bookshelf_access_token_valid(access_token):
             return self._error(self._bookshelf_access_error()["error"])
@@ -900,7 +900,7 @@ class PrivateCompanionPageApiBookshelfMixin:
         return None
 
     async def update_bookshelf_item_comments(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         access_token = (self._bookshelf_request_token(payload))
         if not self._bookshelf_access_token_valid(access_token):
             return self._error(self._bookshelf_access_error()["error"])

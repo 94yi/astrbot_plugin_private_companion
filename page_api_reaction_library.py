@@ -12,7 +12,7 @@ import re
 import time
 from .helpers import _safe_int
 from .reaction_asset_library import get_reaction_asset_library
-from .page_api_shared import _page_api_host
+from .page_api_shared import _page_api_host, _page_api_host_request as request
 from typing import Any
 
 from .logging_util import get_module_logger
@@ -360,12 +360,12 @@ class PrivateCompanionPageApiReactionLibraryMixin:
         try:
             data = await asyncio.to_thread(
                 self._reaction_library().list_items,
-                query=self._single_line(_page_api_host.request.args.get("q"), 160),
-                status=self._single_line(_page_api_host.request.args.get("status"), 20) or "all",
-                scope=self._single_line(_page_api_host.request.args.get("scope"), 20) or "all",
-                analysis=self._single_line(_page_api_host.request.args.get("analysis"), 20) or "all",
-                page=_safe_int(_page_api_host.request.args.get("page"), 1, 1),
-                page_size=_safe_int(_page_api_host.request.args.get("page_size"), 48, 1, 120),
+                query=self._single_line(request.args.get("q"), 160),
+                status=self._single_line(request.args.get("status"), 20) or "all",
+                scope=self._single_line(request.args.get("scope"), 20) or "all",
+                analysis=self._single_line(request.args.get("analysis"), 20) or "all",
+                page=_safe_int(request.args.get("page"), 1, 1),
+                page_size=_safe_int(request.args.get("page_size"), 48, 1, 120),
             )
             if _safe_int(data.get("summary", {}).get("analysis_pending"), 0, 0) > 0:
                 self._schedule_reaction_library_analysis()
@@ -375,7 +375,7 @@ class PrivateCompanionPageApiReactionLibraryMixin:
             return self._error(str(exc))
 
     async def import_reaction_library(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         files = payload.get("files") if isinstance(payload, dict) else None
         if not isinstance(files, list) or not files:
             return self._error("请选择图片或 ZIP 文件")
@@ -398,7 +398,7 @@ class PrivateCompanionPageApiReactionLibraryMixin:
             return self._error(str(exc))
 
     async def analyze_reaction_library(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         ids = payload.get("ids") if isinstance(payload.get("ids"), list) else []
         if not ids:
             return self._error("没有选择要识别的表情包")
@@ -417,7 +417,7 @@ class PrivateCompanionPageApiReactionLibraryMixin:
             return self._error(str(exc))
 
     async def update_reaction_library(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         ids = payload.get("ids") if isinstance(payload.get("ids"), list) else []
         changes = payload.get("changes") if isinstance(payload.get("changes"), dict) else {}
         if not ids:
@@ -432,7 +432,7 @@ class PrivateCompanionPageApiReactionLibraryMixin:
             return self._error(str(exc))
 
     async def delete_reaction_library(self) -> dict[str, Any]:
-        payload = await _page_api_host.request.get_json(silent=True) or {}
+        payload = await request.get_json(silent=True) or {}
         ids = payload.get("ids") if isinstance(payload.get("ids"), list) else []
         if not ids:
             return self._error("没有选择表情包")
