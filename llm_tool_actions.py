@@ -85,22 +85,12 @@ from .interaction_tool_contract import InteractionQuery
 from .interaction_query_orchestrator import execute_interaction_query
 from .photo_nai_params import merge_user_photo_nai_params, recent_cached_photo_nai_params
 
-logger = get_module_logger(__name__)
-
-
-def _render_tool_prompt_section_labeled(section: PromptSection | None) -> str:
-    if section is None:
-        return ""
-    return render_prompt_sections([section], mode=PromptRenderMode.LABELED_BLOCK)
-
-
-def _render_tool_prompt_section_labeled_inline(section: PromptSection | None) -> str:
-    if section is None:
-        return ""
-    return render_prompt_sections([section], mode=PromptRenderMode.LABELED_INLINE)
-
-
-PHOTO_TOOL_SILENT_SENTINEL = "[[PC_PHOTO_SENT_NO_FOLLOWUP]]"
+from .llm_tool_actions_shared import (
+    PHOTO_TOOL_SILENT_SENTINEL,
+    _render_tool_prompt_section_labeled,
+    _render_tool_prompt_section_labeled_inline,
+    logger,
+)
 _PHOTO_TOOL_REDACTED_LOCAL_PATH = "[本地路径已隐藏]"
 _PHOTO_TOOL_WINDOWS_PATH_START_RE = re.compile(
     r"(?<!\w)(?:[A-Za-z]:[\\/]|\\\\(?=[^\\/]))"
