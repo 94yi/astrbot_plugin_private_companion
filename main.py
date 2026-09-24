@@ -1897,6 +1897,68 @@ class PrivateCompanionPlugin(
         """恢复降级为正文的生图调用，并规范化 TTS 标签。"""
         if self is None or not self.enabled:
             return
+        original_text, recovered_text = await self._tts_recover_visible_text(event, resp)
+        if await self._tts_drop_photo_tool_trailing_text(event, resp, recovered_text):
+            return
+        recovered_text = await self._tts_apply_reaction_expression_pass(event, resp, recovered_text)
+        original_text, recovered_text = self._tts_apply_photo_sentinel_guards(
+            event, resp, original_text, recovered_text
+        )
+        pending_tool_text = str(
+            getattr(event, "_private_companion_same_session_tool_text", "") or ""
+        ).strip()
+        tool_names = getattr(resp, "tools_call_name", None)
+        has_tool_call = bool(tool_names) if isinstance(tool_names, (list, tuple, set, str)) else False
+        if (
+            not same_session_tool_call
+            and pending_tool_text
+            and not has_tool_call
+            and not bool(getattr(event, "_private_companion_same_session_tool_finalized", False))
+        ):
+            # A same-session tool call already contains the intended visible
+            # message. Use it once as the final assistant response instead of
+            # sending the tool payload and then repeating it here.
+            try:
+                resp.result_chain = None
+            except Exception:
+                pass
+            resp.completion_text = pending_tool_text
+            recovered_text = pending_tool_text
+            try:
+                setattr(event, "_private_companion_same_session_tool_finalized", True)
+            except Exception:
+                pass
+            logger.info(
+                "已将同会话工具文本恢复为唯一最终回复: session=%s text=%s",
+                _single_line(getattr(event, "unified_msg_origin", ""), 120) or "unknown",
+                _single_line(pending_tool_text, 160),
+            )
+        called_names = getattr(resp, "tools_call_name", None)
+        creative_tool_called = bool(
+            (isinstance(called_names, str) and called_names.strip() == "pc_view_creative_work")
+            or (
+                isinstance(called_names, (list, tuple, set))
+                and "pc_view_creative_work" in {str(item) for item in called_names}
+            )
+        )
+        if creative_tool_called:
+            try:
+                setattr(event, "private_companion_creative_work_tool_attempted", True)
+            except Exception:
+                pass
+        guarded_text = self._guard_unread_creative_work_response(event, recovered_text)
+        if guarded_text != recovered_text:
+            resp.completion_text = guarded_text
+        original_text = guarded_text
+        if self._proactive_only_blocks_passive_event(event, "enable_tts_enhancement"):
+            return
+        normalized_text = _normalize_outbound_punctuation_flow(original_text)
+        if normalized_text and normalized_text != original_text:
+            resp.completion_text = normalized_text
+        await self.protect_tts_enhancement_response_blocks(event, resp)
+
+    async def _tts_recover_visible_text(self, event: Any, resp: Any) -> Any:
+        """恢复被降级为正文的生图调用，返回 (原始正文, 恢复后正文)。"""
         original_text = str(getattr(resp, "completion_text", "") or "")
         same_session_tool = getattr(self, "_prepare_same_session_send_tool_response", None)
         same_session_tool_call = False
@@ -1949,6 +2011,10 @@ class PrivateCompanionPlugin(
         recovered_text, _ = await self._recover_plaintext_photo_tool_call(event, resp, original_text)
         if recovered_text != original_text:
             resp.completion_text = recovered_text
+        return original_text, recovered_text
+
+    async def _tts_drop_photo_tool_trailing_text(self, event: Any, resp: Any, recovered_text: Any) -> bool:
+        """图片工具已发送时丢弃同轮尾随正文。返回 True 表示宿主应立即收口。"""
         if bool(getattr(event, "_private_companion_photo_tool_sent", False)):
             # pc_generate_photo 已经把 caption 与图片作为唯一可见回复发出。
             # 不论模型是否输出静默标记，都丢弃同一轮尾随正文，避免再次分段、TTS 或触发表情附件。
@@ -1972,7 +2038,11 @@ class PrivateCompanionPlugin(
                 _single_line(getattr(event, "unified_msg_origin", ""), 120) or "unknown",
                 len(recovered_text or ""),
             )
-            return
+            return True
+        return False
+
+    async def _tts_apply_reaction_expression_pass(self, event: Any, resp: Any, recovered_text: Any) -> Any:
+        """表情意图抽取与授权记账，返回清洗后的正文。"""
         reaction_extractor = getattr(
             self, "_extract_reaction_expression_hidden_intent", None
         )
@@ -2114,6 +2184,10 @@ class PrivateCompanionPlugin(
                         reason="local_fallback_intent",
                         scope=authorization.get("scope") or reaction_scope,
                     )
+        return recovered_text
+
+    def _tts_apply_photo_sentinel_guards(self, event: Any, resp: Any, original_text: Any, recovered_text: Any) -> Any:
+        """清除生图成功后残留的静默标记与重复承接正文，返回 (原始正文, 恢复后正文)。"""
         sent_photo_caption = str(
             getattr(event, "_private_companion_photo_tool_sent_caption", "") or ""
         ).strip()
@@ -2148,58 +2222,7 @@ class PrivateCompanionPlugin(
                 _single_line(getattr(event, "unified_msg_origin", ""), 120) or "unknown",
                 _single_line(sent_photo_caption, 120),
             )
-        pending_tool_text = str(
-            getattr(event, "_private_companion_same_session_tool_text", "") or ""
-        ).strip()
-        tool_names = getattr(resp, "tools_call_name", None)
-        has_tool_call = bool(tool_names) if isinstance(tool_names, (list, tuple, set, str)) else False
-        if (
-            not same_session_tool_call
-            and pending_tool_text
-            and not has_tool_call
-            and not bool(getattr(event, "_private_companion_same_session_tool_finalized", False))
-        ):
-            # A same-session tool call already contains the intended visible
-            # message. Use it once as the final assistant response instead of
-            # sending the tool payload and then repeating it here.
-            try:
-                resp.result_chain = None
-            except Exception:
-                pass
-            resp.completion_text = pending_tool_text
-            recovered_text = pending_tool_text
-            try:
-                setattr(event, "_private_companion_same_session_tool_finalized", True)
-            except Exception:
-                pass
-            logger.info(
-                "已将同会话工具文本恢复为唯一最终回复: session=%s text=%s",
-                _single_line(getattr(event, "unified_msg_origin", ""), 120) or "unknown",
-                _single_line(pending_tool_text, 160),
-            )
-        called_names = getattr(resp, "tools_call_name", None)
-        creative_tool_called = bool(
-            (isinstance(called_names, str) and called_names.strip() == "pc_view_creative_work")
-            or (
-                isinstance(called_names, (list, tuple, set))
-                and "pc_view_creative_work" in {str(item) for item in called_names}
-            )
-        )
-        if creative_tool_called:
-            try:
-                setattr(event, "private_companion_creative_work_tool_attempted", True)
-            except Exception:
-                pass
-        guarded_text = self._guard_unread_creative_work_response(event, recovered_text)
-        if guarded_text != recovered_text:
-            resp.completion_text = guarded_text
-        original_text = guarded_text
-        if self._proactive_only_blocks_passive_event(event, "enable_tts_enhancement"):
-            return
-        normalized_text = _normalize_outbound_punctuation_flow(original_text)
-        if normalized_text and normalized_text != original_text:
-            resp.completion_text = normalized_text
-        await self.protect_tts_enhancement_response_blocks(event, resp)
+        return original_text, recovered_text
 
     @filter.command("陪伴", alias={"私聊陪伴", "主动陪伴"})
     @_multi_persona_event_context
