@@ -1573,6 +1573,144 @@ for _pkg in {_PACKAGE_NAME, _PACKAGE_NAME.rsplit(".", 1)[0]}:
 
 
 
+private_delivery_bind_actions = {"绑定主动消息", "绑定主动会话", "绑定会话"}
+
+companion_manual_query_actions = {"答疑", "排障", "诊断", "说明"}
+
+companion_manual_confirm_actions = {"答疑确认", "排障确认", "诊断确认", "应用答疑建议", "应用建议"}
+
+companion_manual_cancel_actions = {"答疑取消", "排障取消", "诊断取消", "取消答疑建议", "取消建议"}
+
+companion_manual_setting_actions = {"答疑设置", "排障设置", "诊断设置", "答疑修改", "排障修改", "诊断修改"}
+
+daily_outfit_view_actions = {"今日穿搭图", "今日穿搭", "查看穿搭图", "查看穿搭", "穿搭图", "每日穿搭图", "每日穿搭", "当前穿搭图", "当前穿搭", "展示穿搭图"}
+
+wardrobe_command_actions = {"衣柜", "衣橱", "wardrobe", "角色衣柜", "服装库"}
+
+daily_outfit_generate_actions = {
+    "生成穿搭", "刷新穿搭", "重置穿搭",
+    "生成穿搭图", "刷新穿搭图", "重置穿搭图",
+    "重新生成穿搭", "重新生成穿搭图", "重生穿搭", "重生穿搭图",
+    "生成今日穿搭", "生成今日穿搭图", "生成每日穿搭", "生成每日穿搭图",
+}
+
+photo_command_actions = {"生图", "画图", "绘图", "生成图片", "出图", "自拍", "拍照", "拍一张", "改图", "修图", "重绘", "P图", "p图"}
+
+daily_schedule_regenerate_actions = {"重置日程", "生成日程", "刷新日程", "重新生成日程"}
+
+daily_schedule_cancel_actions = {"删除日程", "取消日程", "移除日程"}
+
+image_api_status_actions = {"查看生图API", "查看生图api", "生图API状态", "生图api状态", "在线生图API", "在线生图api", "生图接口"}
+
+image_api_swap_actions = {
+    "切换生图API", "切换生图api", "交换生图API", "交换生图api",
+    "切换在线生图API", "切换在线生图api", "交换在线生图API", "交换在线生图api",
+    "切换图片API", "切换图片api", "交换图片API", "交换图片api",
+    "切换备用生图", "启用备用生图", "使用备用生图", "切到备用生图",
+    "切换备选生图", "启用备选生图", "使用备选生图", "切到备选生图",
+}
+
+qweather_location_bind_actions = {"绑定城市", "设置城市"}
+
+qweather_location_view_actions = {"查看城市", "当前城市", "天气城市"}
+
+qweather_location_unbind_actions = {"解绑城市", "清除城市"}
+
+qweather_location_actions = {
+    *qweather_location_bind_actions,
+    *qweather_location_view_actions,
+    *qweather_location_unbind_actions,
+}
+
+wakeup_alarm_actions = {"现实触及", "现实触及闹钟", "现实触及起床", "起床闹钟", "起床提醒", "蓝牙起床", "蓝牙闹钟"}
+
+private_delivery_view_actions = {"查看主动路由", "查看主动绑定", "主动路由", "主动绑定"}
+
+private_delivery_unbind_actions = {"解绑主动消息", "解绑主动会话", "解绑会话"}
+
+private_delivery_actions = {
+    *private_delivery_bind_actions,
+    *private_delivery_view_actions,
+    *private_delivery_unbind_actions,
+}
+
+tts_language_actions = {"TTS语种", "tts语种", "语音语种", "TTS", "tts"}
+
+bookshelf_password_reset_actions = {
+    "重置夹层密码", "重设夹层密码", "重新生成夹层密码", "刷新夹层密码", "生成夹层密码",
+    "重置资料柜密码", "重设资料柜密码", "重新生成资料柜密码", "刷新资料柜密码", "生成资料柜密码",
+}
+
+bookshelf_password_output_actions = {
+    "输出夹层密码", "强制输出夹层密码", "查看夹层密码", "显示夹层密码",
+    "输出资料柜密码", "强制输出资料柜密码", "查看资料柜密码", "显示资料柜密码",
+    "输出抽屉密码", "查看抽屉密码", "显示抽屉密码",
+}
+
+bookshelf_password_value_actions = {"强制输出", "输出", "查看密码", "查看", "显示"}
+
+bookshelf_password_value_targets = {"夹层密码", "资料柜密码", "抽屉密码", "资料柜暗格", "夹层", "资料柜"}
+
+deferred_actions = {
+    "重置当前人格", "当前人格重置", "重置人格",
+    "重置插件", "全部重置",
+    "查看提示词", "提示词", "prompt",
+    "重置细化",
+    *daily_schedule_regenerate_actions,
+    *daily_schedule_cancel_actions,
+    *daily_outfit_generate_actions,
+    "生成状态", "刷新状态", "重生状态",
+    "增添状态", "添加状态",
+    "生成日记", "刷新日记",
+    "梦境", "做了什么梦", "今日梦境",
+    *bookshelf_password_reset_actions,
+    "发说说", "发QQ空间", "发布说说", "空间发布", "发布空间",
+    "测试说说链路", "测试空间发布", "测试QQ空间发布", "测试qzone发布",
+    "测试说说配图", "测试空间配图", "测试QQ空间配图", "测试qzone配图",
+    "新闻", "今日新闻", "AI新闻", "ai新闻", "AI日报", "ai日报", "日报", "AI早报", "ai早报", "早报",
+    *companion_manual_query_actions,
+    *photo_command_actions,
+    *image_api_swap_actions,
+    *qweather_location_actions,
+}
+
+public_safe_actions = {
+    *companion_manual_query_actions,
+    *companion_manual_confirm_actions,
+    *companion_manual_cancel_actions,
+    *companion_manual_setting_actions,
+    *daily_outfit_view_actions,
+    *tts_language_actions,
+    *wakeup_alarm_actions,
+}
+
+management_actions = {
+    "重置当前人格", "当前人格重置", "重置人格",
+    "重置插件", "全部重置",
+    "查看提示词", "提示词", "prompt",
+    "重置细化", *daily_schedule_regenerate_actions, *daily_schedule_cancel_actions,
+    *daily_outfit_generate_actions,
+    "生成状态", "刷新状态", "重生状态",
+    "增添状态", "添加状态",
+    "生成日记", "刷新日记",
+    *bookshelf_password_reset_actions,
+    *bookshelf_password_output_actions,
+    "发说说", "发QQ空间", "发布说说", "空间发布", "发布空间",
+    "测试说说链路", "测试空间发布", "测试QQ空间发布", "测试qzone发布",
+    "测试说说配图", "测试空间配图", "测试QQ空间配图", "测试qzone配图",
+    "新闻", "今日新闻", "AI新闻", "ai新闻", "AI日报", "ai日报", "日报", "AI早报", "ai早报", "早报",
+    *tts_language_actions,
+    "撤回消息", "防撤回", "转述撤回", "撤回转述",
+    "日期添加", "添加日期", "重要日期添加",
+    "日期删除", "删除日期", "重要日期删除",
+    "话头删除", "删除话头", "未完话头删除", "删除未完话头",
+    "清空记忆", "忘记我",
+    "参考图", "人设参考图", "自拍参考图", "参考图库",
+    *image_api_status_actions,
+    *image_api_swap_actions,
+    *qweather_location_actions,
+}
+
 class PrivateCompanionPlugin(
     CoreStoreMixin,
     PlatformCompatibilityMixin,
@@ -2095,36 +2233,8 @@ class PrivateCompanionPlugin(
                 bootstrap_action,
                 bootstrap_value,
             )
-        private_delivery_bind_actions = {"绑定主动消息", "绑定主动会话", "绑定会话"}
         is_private_delivery_bootstrap = bootstrap_action in private_delivery_bind_actions
-        if is_private:
-            raw_user_id = str(event.get_sender_id() or "").strip()
-            identity_normalizer = getattr(self, "_normalize_private_identity_id", None)
-            user_id = identity_normalizer(raw_user_id) if callable(identity_normalizer) else raw_user_id
-            user_id = user_id or raw_user_id
-            sender_name_reader = getattr(self, "_sender_display_name", None)
-            if callable(sender_name_reader):
-                sender_display_name = _single_line(sender_name_reader(event), 40)
-            else:
-                sender_display_name = _single_line(user_id, 40)
-            async with self._data_lock:
-                private_user, _ = self._ensure_auto_private_user_profile(
-                    event,
-                    user_id=user_id,
-                    sender_display_name=sender_display_name,
-                    now=_now_ts(),
-                )
-                if isinstance(private_user, dict):
-                    user_id = _single_line(private_user.get("user_id"), 160) or user_id
-                migrator = getattr(self, "_req036_migrate_configured_target_capability", None)
-                if callable(migrator):
-                    migrator(user_id, private_user)
-                self._req036_attach_unified_profile_context(
-                    event,
-                    user=private_user if isinstance(private_user, dict) else None,
-                    source="private_command",
-                )
-                self._schedule_data_save(sections={"users", "unified_person"})
+        await self._companion_command_bootstrap_private_identity(event, is_private)
         self._qzone_note_event_bot(event)
         raw_text = str(event.message_str or "")
         normalized_text = raw_text.replace("\u3000", " ").replace("／", "/").strip()
@@ -2140,80 +2250,7 @@ class PrivateCompanionPlugin(
         }:
             action, value = args[0], ""
         action, value = self._normalize_companion_command_action(action, value)
-        companion_manual_query_actions = {"答疑", "排障", "诊断", "说明"}
-        companion_manual_confirm_actions = {"答疑确认", "排障确认", "诊断确认", "应用答疑建议", "应用建议"}
-        companion_manual_cancel_actions = {"答疑取消", "排障取消", "诊断取消", "取消答疑建议", "取消建议"}
-        companion_manual_setting_actions = {"答疑设置", "排障设置", "诊断设置", "答疑修改", "排障修改", "诊断修改"}
-        daily_outfit_view_actions = {"今日穿搭图", "今日穿搭", "查看穿搭图", "查看穿搭", "穿搭图", "每日穿搭图", "每日穿搭", "当前穿搭图", "当前穿搭", "展示穿搭图"}
-        wardrobe_command_actions = {"衣柜", "衣橱", "wardrobe", "角色衣柜", "服装库"}
-        daily_outfit_generate_actions = {
-            "生成穿搭", "刷新穿搭", "重置穿搭",
-            "生成穿搭图", "刷新穿搭图", "重置穿搭图",
-            "重新生成穿搭", "重新生成穿搭图", "重生穿搭", "重生穿搭图",
-            "生成今日穿搭", "生成今日穿搭图", "生成每日穿搭", "生成每日穿搭图",
-        }
-        photo_command_actions = {"生图", "画图", "绘图", "生成图片", "出图", "自拍", "拍照", "拍一张", "改图", "修图", "重绘", "P图", "p图"}
-        daily_schedule_regenerate_actions = {"重置日程", "生成日程", "刷新日程", "重新生成日程"}
-        daily_schedule_cancel_actions = {"删除日程", "取消日程", "移除日程"}
-        image_api_status_actions = {"查看生图API", "查看生图api", "生图API状态", "生图api状态", "在线生图API", "在线生图api", "生图接口"}
-        image_api_swap_actions = {
-            "切换生图API", "切换生图api", "交换生图API", "交换生图api",
-            "切换在线生图API", "切换在线生图api", "交换在线生图API", "交换在线生图api",
-            "切换图片API", "切换图片api", "交换图片API", "交换图片api",
-            "切换备用生图", "启用备用生图", "使用备用生图", "切到备用生图",
-            "切换备选生图", "启用备选生图", "使用备选生图", "切到备选生图",
-        }
-        qweather_location_bind_actions = {"绑定城市", "设置城市"}
-        qweather_location_view_actions = {"查看城市", "当前城市", "天气城市"}
-        qweather_location_unbind_actions = {"解绑城市", "清除城市"}
-        qweather_location_actions = {
-            *qweather_location_bind_actions,
-            *qweather_location_view_actions,
-            *qweather_location_unbind_actions,
-        }
-        wakeup_alarm_actions = {"现实触及", "现实触及闹钟", "现实触及起床", "起床闹钟", "起床提醒", "蓝牙起床", "蓝牙闹钟"}
-        private_delivery_view_actions = {"查看主动路由", "查看主动绑定", "主动路由", "主动绑定"}
-        private_delivery_unbind_actions = {"解绑主动消息", "解绑主动会话", "解绑会话"}
-        private_delivery_actions = {
-            *private_delivery_bind_actions,
-            *private_delivery_view_actions,
-            *private_delivery_unbind_actions,
-        }
-        tts_language_actions = {"TTS语种", "tts语种", "语音语种", "TTS", "tts"}
-        if action in companion_manual_query_actions:
-            inline_value = value.strip()
-            if inline_value in {"确认", "应用", "执行", "确认执行", "应用建议"}:
-                action = "答疑确认"
-                value = ""
-            elif inline_value in {"取消", "取消建议", "放弃"}:
-                action = "答疑取消"
-                value = ""
-            else:
-                inline_parts = inline_value.split(maxsplit=1)
-                if len(inline_parts) >= 2 and inline_parts[0] in {"设置", "修改", "set", "Set", "SET"}:
-                    action = "答疑设置"
-                    value = inline_parts[1].strip()
-                elif re.search(r"^[A-Za-z_][A-Za-z0-9_]*\s*(?:=|:|：|设为|设置为|改成|调到)\s*\S+", inline_value):
-                    action = "答疑设置"
-                    value = inline_value
-                else:
-                    maybe_key, maybe_value = self._companion_manual_parse_setting_text(inline_value)
-                    if maybe_key and maybe_value:
-                        ok, _, _ = self._companion_manual_normalize_config_value(maybe_key, maybe_value)
-                        if ok:
-                            action = "答疑设置"
-                            value = inline_value
-        bookshelf_password_reset_actions = {
-            "重置夹层密码", "重设夹层密码", "重新生成夹层密码", "刷新夹层密码", "生成夹层密码",
-            "重置资料柜密码", "重设资料柜密码", "重新生成资料柜密码", "刷新资料柜密码", "生成资料柜密码",
-        }
-        bookshelf_password_output_actions = {
-            "输出夹层密码", "强制输出夹层密码", "查看夹层密码", "显示夹层密码",
-            "输出资料柜密码", "强制输出资料柜密码", "查看资料柜密码", "显示资料柜密码",
-            "输出抽屉密码", "查看抽屉密码", "显示抽屉密码",
-        }
-        bookshelf_password_value_actions = {"强制输出", "输出", "查看密码", "查看", "显示"}
-        bookshelf_password_value_targets = {"夹层密码", "资料柜密码", "抽屉密码", "资料柜暗格", "夹层", "资料柜"}
+        action, value = self._companion_manual_inline_action(action, value, companion_manual_query_actions)
         bookshelf_password_output_requested = (
             action in bookshelf_password_output_actions
             or (
@@ -2223,39 +2260,8 @@ class PrivateCompanionPlugin(
         )
         response_image_path = ""
         response_extra_components: list[Any] = []
-        deferred_actions = {
-            "重置当前人格", "当前人格重置", "重置人格",
-            "重置插件", "全部重置",
-            "查看提示词", "提示词", "prompt",
-            "重置细化",
-            *daily_schedule_regenerate_actions,
-            *daily_schedule_cancel_actions,
-            *daily_outfit_generate_actions,
-            "生成状态", "刷新状态", "重生状态",
-            "增添状态", "添加状态",
-            "生成日记", "刷新日记",
-            "梦境", "做了什么梦", "今日梦境",
-            *bookshelf_password_reset_actions,
-            "发说说", "发QQ空间", "发布说说", "空间发布", "发布空间",
-            "测试说说链路", "测试空间发布", "测试QQ空间发布", "测试qzone发布",
-            "测试说说配图", "测试空间配图", "测试QQ空间配图", "测试qzone配图",
-            "新闻", "今日新闻", "AI新闻", "ai新闻", "AI日报", "ai日报", "日报", "AI早报", "ai早报", "早报",
-            *companion_manual_query_actions,
-            *photo_command_actions,
-            *image_api_swap_actions,
-            *qweather_location_actions,
-        }
 
         is_private = bool(getattr(event, "is_private_chat", lambda: False)())
-        public_safe_actions = {
-            *companion_manual_query_actions,
-            *companion_manual_confirm_actions,
-            *companion_manual_cancel_actions,
-            *companion_manual_setting_actions,
-            *daily_outfit_view_actions,
-            *tts_language_actions,
-            *wakeup_alarm_actions,
-        }
         if action in private_delivery_actions and not is_private:
             await self._reply(event, "请在需要接收主动消息的私聊窗口执行这个指令。")
             event.stop_event()
@@ -2273,52 +2279,12 @@ class PrivateCompanionPlugin(
             event.stop_event()
             return
 
-        management_actions = {
-            "重置当前人格", "当前人格重置", "重置人格",
-            "重置插件", "全部重置",
-            "查看提示词", "提示词", "prompt",
-            "重置细化", *daily_schedule_regenerate_actions, *daily_schedule_cancel_actions,
-            *daily_outfit_generate_actions,
-            "生成状态", "刷新状态", "重生状态",
-            "增添状态", "添加状态",
-            "生成日记", "刷新日记",
-            *bookshelf_password_reset_actions,
-            *bookshelf_password_output_actions,
-            "发说说", "发QQ空间", "发布说说", "空间发布", "发布空间",
-            "测试说说链路", "测试空间发布", "测试QQ空间发布", "测试qzone发布",
-            "测试说说配图", "测试空间配图", "测试QQ空间配图", "测试qzone配图",
-            "新闻", "今日新闻", "AI新闻", "ai新闻", "AI日报", "ai日报", "日报", "AI早报", "ai早报", "早报",
-            *tts_language_actions,
-            "撤回消息", "防撤回", "转述撤回", "撤回转述",
-            "日期添加", "添加日期", "重要日期添加",
-            "日期删除", "删除日期", "重要日期删除",
-            "话头删除", "删除话头", "未完话头删除", "删除未完话头",
-            "清空记忆", "忘记我",
-            "参考图", "人设参考图", "自拍参考图", "参考图库",
-            *image_api_status_actions,
-            *image_api_swap_actions,
-            *qweather_location_actions,
-        }
         if (action in management_actions or bookshelf_password_output_requested) and not self._can_manage_private_companion(event):
             await self._reply(event, self._management_denied_text())
             event.stop_event()
             return
 
-        raw_user_id = str(event.get_sender_id() or "").strip()
-        resolver = getattr(self, "_private_user_id_for_event", None)
-        canonicalizer = getattr(self, "_canonical_private_user_id", None)
-        identity_normalizer = getattr(self, "_normalize_private_identity_id", None)
-        fallback_user_id = (
-            identity_normalizer(raw_user_id)
-            if callable(identity_normalizer)
-            else raw_user_id
-        ) or raw_user_id
-        user_id = (
-            resolver(event, raw_user_id)
-            if callable(resolver)
-            else canonicalizer(fallback_user_id) if callable(canonicalizer) else fallback_user_id
-        )
-        user_id = _single_line(user_id, 160) or raw_user_id
+        raw_user_id, user_id = self._companion_command_resolve_user_id(event)
         wakeup_test_requested: Any = False
         async with self._data_lock:
             user = self._get_user(user_id)
@@ -2354,37 +2320,7 @@ class PrivateCompanionPlugin(
                     wakeup_test_requested = False
                     response += "\n现实触及联动插件未启用，请在“我会来到你身边”配置中开启总开关。"
             elif action in {"状态", "status"}:
-                self._reset_daily_counter_if_needed(user)
-                last_seen = self._format_timestamp_elapsed(self._latest_user_activity_ts(user))
-                last_sent = self._format_timestamp_elapsed(user.get("last_sent"))
-                plan = self.data.get("daily_plan", {})
-                plan_text = self._format_plan_status_summary(plan if isinstance(plan, dict) else {})
-                state = self.data.get("daily_state", {})
-                state_text = (
-                    f"{state.get('date')}｜能量 {state.get('energy', 70)}/100｜情绪偏{state.get('mood_bias', '平稳')}"
-                    if state else "未生成"
-                )
-                simulation_text = self._format_simulation_summary(user)
-                response = "".join(
-                    [
-                        "运行模式：默认开启\n",
-                        f"称呼：{user.get('nickname') or runtime_persona_setting(self, 'default_nickname', '你')}\n",
-                        f"语气：{user.get('style') or runtime_persona_setting(self, 'default_style', '温柔')}\n",
-                        f"日程：{plan_text}\n",
-                        f"拟人状态：{state_text}\n",
-                        f"关系角色：{self._private_user_role_label(self._private_user_role(user, user_id))}\n",
-                        f"今日主动消息：{user.get('sent_today', 0)}/{self._effective_user_daily_limit(user)}\n",
-                        f"今日软目标：约 {self._soft_daily_target(user):.1f} 条\n",
-                        f"免打扰：{runtime_persona_setting(self, 'quiet_hours', '23:00-08:30')}\n",
-                        f"上次活跃：{last_seen}\n",
-                        f"上次主动：{last_sent}\n",
-                        f"下次候选：{self._format_next_proactive(user)}\n",
-                        f"{simulation_text}\n" if simulation_text else "",
-                        f"{self._format_suspended_summary(user)}\n",
-                        f"主动方式承接：{self._format_action_affinity_summary(user)}\n",
-                        f"关系：{self._format_relationship_summary(user)}",
-                    ]
-                )
+                response = self._format_companion_status_response(user, user_id)
             elif action in {"撤回消息", "防撤回", "转述撤回", "撤回转述"}:
                 if not runtime_persona_setting(self, 'enable_recall_enhancement', True) or not runtime_persona_setting(self, 'enable_recall_transcribe_command', True):
                     response = "撤回消息转述没有开启。"
@@ -2583,6 +2519,131 @@ class PrivateCompanionPlugin(
                 response_image_path,
                 extra_components=response_extra_components,
             )
+        if await self._companion_command_dispatch_actions(
+            event, user, user_id, action, value, wakeup_test_requested
+        ):
+            return
+        if await self._companion_command_qzone_actions(event, response):
+            return
+        await self._companion_command_reset_actions(event, response)
+        if await self._companion_command_generate_actions(event, user):
+            return
+        event.stop_event()
+
+
+    async def _companion_command_bootstrap_private_identity(self, event: Any, is_private: Any) -> None:
+        """私聊陪伴指令进入前，确保私聊身份档案已建立并完成 REQ036 上下文挂载。"""
+        if is_private:
+            raw_user_id = str(event.get_sender_id() or "").strip()
+            identity_normalizer = getattr(self, "_normalize_private_identity_id", None)
+            user_id = identity_normalizer(raw_user_id) if callable(identity_normalizer) else raw_user_id
+            user_id = user_id or raw_user_id
+            sender_name_reader = getattr(self, "_sender_display_name", None)
+            if callable(sender_name_reader):
+                sender_display_name = _single_line(sender_name_reader(event), 40)
+            else:
+                sender_display_name = _single_line(user_id, 40)
+            async with self._data_lock:
+                private_user, _ = self._ensure_auto_private_user_profile(
+                    event,
+                    user_id=user_id,
+                    sender_display_name=sender_display_name,
+                    now=_now_ts(),
+                )
+                if isinstance(private_user, dict):
+                    user_id = _single_line(private_user.get("user_id"), 160) or user_id
+                migrator = getattr(self, "_req036_migrate_configured_target_capability", None)
+                if callable(migrator):
+                    migrator(user_id, private_user)
+                self._req036_attach_unified_profile_context(
+                    event,
+                    user=private_user if isinstance(private_user, dict) else None,
+                    source="private_command",
+                )
+                self._schedule_data_save(sections={"users", "unified_person"})
+
+    def _companion_manual_inline_action(self, action: Any, value: Any, query_actions: Any) -> Any:
+        """把「答疑 <内联指令>」的写法归一到具体的 manual 动作与参数。"""
+        if action in companion_manual_query_actions:
+            inline_value = value.strip()
+            if inline_value in {"确认", "应用", "执行", "确认执行", "应用建议"}:
+                action = "答疑确认"
+                value = ""
+            elif inline_value in {"取消", "取消建议", "放弃"}:
+                action = "答疑取消"
+                value = ""
+            else:
+                inline_parts = inline_value.split(maxsplit=1)
+                if len(inline_parts) >= 2 and inline_parts[0] in {"设置", "修改", "set", "Set", "SET"}:
+                    action = "答疑设置"
+                    value = inline_parts[1].strip()
+                elif re.search(r"^[A-Za-z_][A-Za-z0-9_]*\s*(?:=|:|：|设为|设置为|改成|调到)\s*\S+", inline_value):
+                    action = "答疑设置"
+                    value = inline_value
+                else:
+                    maybe_key, maybe_value = self._companion_manual_parse_setting_text(inline_value)
+                    if maybe_key and maybe_value:
+                        ok, _, _ = self._companion_manual_normalize_config_value(maybe_key, maybe_value)
+                        if ok:
+                            action = "答疑设置"
+                            value = inline_value
+        return action, value
+
+    def _companion_command_resolve_user_id(self, event: Any) -> Any:
+        """解析陪伴指令的事件身份，返回 (原始 ID, 规范化 ID)。"""
+        raw_user_id = str(event.get_sender_id() or "").strip()
+        resolver = getattr(self, "_private_user_id_for_event", None)
+        canonicalizer = getattr(self, "_canonical_private_user_id", None)
+        identity_normalizer = getattr(self, "_normalize_private_identity_id", None)
+        fallback_user_id = (
+            identity_normalizer(raw_user_id)
+            if callable(identity_normalizer)
+            else raw_user_id
+        ) or raw_user_id
+        user_id = (
+            resolver(event, raw_user_id)
+            if callable(resolver)
+            else canonicalizer(fallback_user_id) if callable(canonicalizer) else fallback_user_id
+        )
+        user_id = _single_line(user_id, 160) or raw_user_id
+        return raw_user_id, user_id
+
+    def _format_companion_status_response(self, user: Any, user_id: Any) -> str:
+        """生成「状态 / status」指令的运行状态总览文本。"""
+        self._reset_daily_counter_if_needed(user)
+        last_seen = self._format_timestamp_elapsed(self._latest_user_activity_ts(user))
+        last_sent = self._format_timestamp_elapsed(user.get("last_sent"))
+        plan = self.data.get("daily_plan", {})
+        plan_text = self._format_plan_status_summary(plan if isinstance(plan, dict) else {})
+        state = self.data.get("daily_state", {})
+        state_text = (
+            f"{state.get('date')}｜能量 {state.get('energy', 70)}/100｜情绪偏{state.get('mood_bias', '平稳')}"
+            if state else "未生成"
+        )
+        simulation_text = self._format_simulation_summary(user)
+        return "".join(
+            [
+                "运行模式：默认开启\n",
+                f"称呼：{user.get('nickname') or runtime_persona_setting(self, 'default_nickname', '你')}\n",
+                f"语气：{user.get('style') or runtime_persona_setting(self, 'default_style', '温柔')}\n",
+                f"日程：{plan_text}\n",
+                f"拟人状态：{state_text}\n",
+                f"关系角色：{self._private_user_role_label(self._private_user_role(user, user_id))}\n",
+                f"今日主动消息：{user.get('sent_today', 0)}/{self._effective_user_daily_limit(user)}\n",
+                f"今日软目标：约 {self._soft_daily_target(user):.1f} 条\n",
+                f"免打扰：{runtime_persona_setting(self, 'quiet_hours', '23:00-08:30')}\n",
+                f"上次活跃：{last_seen}\n",
+                f"上次主动：{last_sent}\n",
+                f"下次候选：{self._format_next_proactive(user)}\n",
+                f"{simulation_text}\n" if simulation_text else "",
+                f"{self._format_suspended_summary(user)}\n",
+                f"主动方式承接：{self._format_action_affinity_summary(user)}\n",
+                f"关系：{self._format_relationship_summary(user)}",
+            ]
+        )
+
+    async def _companion_command_dispatch_actions(self, event: Any, user: Any, user_id: Any, action: Any, value: Any, wakeup_test_requested: Any) -> bool:
+        """陪伴指令尾段：摄像头 / 闹钟测试 / 答疑 / 城市 / 生图 / 生图接口切换。返回 True 表示已收口。"""
         if (
             action in wakeup_alarm_actions
             and isinstance(wakeup_test_requested, dict)
@@ -2608,44 +2669,48 @@ class PrivateCompanionPlugin(
                 ("单帧读取完成：" + detail) if result.get("status") == "success" and detail else _single_line(result.get("message"), 200),
             )
             event.stop_event()
-            return
+            return True
         if action in wakeup_alarm_actions and wakeup_test_requested:
             self._create_lifecycle_background_task(
                 self._test_wakeup_alarm(user),
                 label="wakeup_alarm_test",
             )
             event.stop_event()
-            return
+            return True
         if action in companion_manual_query_actions:
             await self._reply(event, await self._companion_manual_answer(event, value))
             event.stop_event()
-            return
+            return True
         if action in qweather_location_actions:
             await self._reply(event, await self._qweather_location_command_text(action, value))
             event.stop_event()
-            return
+            return True
         if action in photo_command_actions:
             await self._handle_companion_photo_command(event, user_id, action, value)
-            return
+            return True
         if action in image_api_swap_actions:
             force_swap = bool(re.search(r"(?:强制|force|确认|直接)", value, flags=re.I))
             await self._reply(event, await self._swap_external_image_api_command_text(force=force_swap))
             event.stop_event()
-            return
+            return True
+        return False
+
+    async def _companion_command_qzone_actions(self, event: Any, response: Any) -> bool:
+        """陪伴指令尾段：QQ 空间发布与链路自检、AI 日报 / 新闻。返回 True 表示已收口。"""
         if action in {"发说说", "发QQ空间", "发布说说", "空间发布", "发布空间"}:
             image_sources = await self._qzone_image_sources_from_event(event)
             image_sources, image_select_message = self._qzone_select_image_sources(value, image_sources)
             if image_select_message:
                 await self._reply(event, image_select_message)
                 event.stop_event()
-                return
+                return True
             publish_text = self._qzone_clean_publish_text(value)
             if image_sources and publish_text in {"[图片]", "【图片】", "图片"}:
                 publish_text = ""
             if not publish_text and not image_sources:
                 await self._reply(event, "请这样使用：陪伴 发说说 <正文>，也可以随消息附带图片。\n这是公开发布动作，正文或图片不能为空。")
                 event.stop_event()
-                return
+                return True
             await self._reply(event, response)
             result = await self._publish_qzone_text(publish_text, event, images=image_sources, auto_generate_image=True)
             if result.get("success"):
@@ -2661,29 +2726,33 @@ class PrivateCompanionPlugin(
             else:
                 await self._reply(event, f"发布失败：{_single_line(result.get('message'), 180)}")
             event.stop_event()
-            return
+            return True
         if action in {"测试说说链路", "测试空间发布", "测试QQ空间发布", "测试qzone发布"}:
             await self._reply(event, response)
             await self._reply(event, await self._test_qzone_publish_tool_chain(event))
             event.stop_event()
-            return
+            return True
         if action in {"测试说说配图", "测试空间配图", "测试QQ空间配图", "测试qzone配图"}:
             await self._reply(event, response)
             await self._reply(event, await self._test_qzone_publish_image_chain(event))
             event.stop_event()
-            return
+            return True
         if action in {"AI日报", "ai日报", "日报", "AI早报", "ai早报", "早报"}:
             await self._reply(event, response)
             await self._maybe_track_ai_daily(force=True)
             await self._reply(event, self._format_ai_daily_digest_for_command())
             event.stop_event()
-            return
+            return True
         if action in {"新闻", "今日新闻", "AI新闻", "ai新闻"}:
             await self._reply(event, response)
             await self._perform_news_reading(reason="user_query", allow_share=False, force=True)
             await self._reply(event, self._format_news_digest_for_command())
             event.stop_event()
-            return
+            return True
+        return False
+
+    async def _companion_command_reset_actions(self, event: Any, response: Any) -> None:
+        """陪伴指令尾段：夹层密码重置、人格 / 插件重置、日程重生成与取消。"""
         if action in bookshelf_password_reset_actions:
             await self._reply(event, response)
         if action in {"重置当前人格", "当前人格重置", "重置人格"}:
@@ -2750,6 +2819,9 @@ class PrivateCompanionPlugin(
         if action in daily_schedule_cancel_actions:
             _, message = await self._cancel_daily_plan_segment_by_selector(value)
             await self._reply(event, message)
+
+    async def _companion_command_generate_actions(self, event: Any, user: Any) -> bool:
+        """陪伴指令尾段：穿搭 / 状态 / 提示词 / 细化 / 日记 / 梦境。返回 True 表示已收口。"""
         if action in daily_outfit_generate_actions:
             outfit_generator = getattr(self, "_ensure_daily_outfit_photo", None)
             outfit_lock = getattr(self, "_daily_outfit_photo_generation_lock", None)
@@ -2768,7 +2840,7 @@ class PrivateCompanionPlugin(
                 if not os.path.exists(image_path):
                     await self._reply(event, f"每日穿搭照片未生成：图片文件不存在 {image_path}")
                     event.stop_event()
-                    return
+                    return True
                 caption = "换好啦，你看"
                 if not self._should_skip_recent_outfit_command_send(event, text=caption, image_path=image_path):
                     try:
@@ -2834,7 +2906,7 @@ class PrivateCompanionPlugin(
             if not state:
                 state = await self._ensure_daily_state(force=True)
             await self._reply(event, self._format_dream_view(state or {}))
-        event.stop_event()
+        return False
 
     @filter.command("陪伴群", alias={"群陪伴", "群聊陪伴"})
     @_multi_persona_event_context
