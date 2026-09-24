@@ -19,7 +19,8 @@ import uuid
 from copy import copy, deepcopy
 from pathlib import Path
 from typing import Any, Mapping
-from quart import request, send_file
+from quart import send_file
+from .page_api_shared import _page_api_host
 from .conversation_prompt_section import (
     PromptRenderMode,
     prompt_document,
@@ -81,9 +82,9 @@ class PrivateCompanionPageApiPersonaMixin:
         async def wrapper(*args, **kwargs):
             plugin = getattr(self, "plugin", None)
             activator = getattr(plugin, "_activate_persona_id", None)
-            persona_id = self._single_line(request.args.get("_persona_id"), 96)
-            if not persona_id and request.method != "GET":
-                payload = await request.get_json(silent=True) or {}
+            persona_id = self._single_line(_page_api_host.request.args.get("_persona_id"), 96)
+            if not persona_id and _page_api_host.request.method != "GET":
+                payload = await _page_api_host.request.get_json(silent=True) or {}
                 if isinstance(payload, dict):
                     persona_id = self._single_line(payload.get("_persona_id"), 96)
             config_getter = getattr(plugin, "_persona_config_profile_ids", None)
@@ -267,7 +268,7 @@ class PrivateCompanionPageApiPersonaMixin:
             return self._single_line(getattr(self.plugin, "_page_current_persona_id", ""), 96)
         return ""
     async def update_personal_goal(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
+        payload = await _page_api_host.request.get_json(silent=True) or {}
         goal_id = self._single_line(payload.get("id"), 40)
         title = self._single_line(payload.get("title"), 60)
         if not goal_id and not title:
@@ -417,7 +418,7 @@ class PrivateCompanionPageApiPersonaMixin:
             logger.warning(f"获取人格列表失败: {exc}", exc_info=True)
             return self._ok({"items": self._fallback_roleplay_persona_items(), "current": "", "default": ""})
     async def get_persona_config_state(self) -> dict[str, Any]:
-        persona_id = self._single_line(request.args.get("persona_id"), 96)
+        persona_id = self._single_line(_page_api_host.request.args.get("persona_id"), 96)
         getter = getattr(self.plugin, "_persona_config_state", None)
         if not callable(getter):
             return self._error("当前版本不支持人格独立配置", status_code=503)
@@ -426,7 +427,7 @@ class PrivateCompanionPageApiPersonaMixin:
         except Exception as exc:
             return self._error(str(exc))
     async def create_persona_config(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
+        payload = await _page_api_host.request.get_json(silent=True) or {}
         creator = getattr(self.plugin, "_create_persona_config_async", None)
         if not callable(creator):
             return self._error("当前版本不支持创建人格配置", status_code=503)
@@ -439,7 +440,7 @@ class PrivateCompanionPageApiPersonaMixin:
         )
         return self._ok(result) if result.get("ok") else self._error(result.get("message") or "创建人格配置失败", status_code=int(result.get("status_code") or 400))
     async def update_persona_settings(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
+        payload = await _page_api_host.request.get_json(silent=True) or {}
         updater = getattr(self.plugin, "_update_persona_settings_async", None)
         if not callable(updater):
             return self._error("当前版本不支持人格配置更新", status_code=503)
@@ -457,14 +458,14 @@ class PrivateCompanionPageApiPersonaMixin:
         )
         return self._ok(result) if result.get("ok") else self._error(result.get("message") or "人格配置更新失败", status_code=int(result.get("status_code") or 400))
     async def preview_persona_config_detach(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
+        payload = await _page_api_host.request.get_json(silent=True) or {}
         previewer = getattr(self.plugin, "_persona_detach_preview", None)
         if not callable(previewer):
             return self._error("当前版本不支持脱离主人格", status_code=503)
         result = previewer(payload.get("persona_id"))
         return self._ok(result) if result.get("ok") else self._error(result.get("message") or "脱离预览失败")
     async def apply_persona_config_detach(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
+        payload = await _page_api_host.request.get_json(silent=True) or {}
         apply_detach = getattr(self.plugin, "_detach_persona_settings_async", None)
         if not callable(apply_detach):
             return self._error("当前版本不支持脱离主人格", status_code=503)
@@ -475,7 +476,7 @@ class PrivateCompanionPageApiPersonaMixin:
         )
         return self._ok(result) if result.get("ok") else self._error(result.get("message") or "脱离主人格失败", status_code=int(result.get("status_code") or 400))
     async def migrate_persona_profile(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
+        payload = await _page_api_host.request.get_json(silent=True) or {}
         if not bool(getattr(self.plugin, "enable_multi_persona_mode", False)):
             return self._ok({"enabled": False, "migrated": False})
         source_id = str(payload.get("source_persona_id") or "").strip()
@@ -489,7 +490,7 @@ class PrivateCompanionPageApiPersonaMixin:
         )
         return self._ok(result) if result.get("ok") else self._error(result.get("message") or "人格资料迁移失败")
     async def reset_current_persona(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
+        payload = await _page_api_host.request.get_json(silent=True) or {}
         persona_id = self._single_line(payload.get("persona_id"), 120)
         resetter = getattr(self.plugin, "_reset_current_persona_store", None)
         if not callable(resetter):
@@ -739,7 +740,7 @@ class PrivateCompanionPageApiPersonaMixin:
                     return text
         return ""
     async def generate_roleplay_draft_from_persona(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
+        payload = await _page_api_host.request.get_json(silent=True) or {}
         umo = self._single_line(payload.get("umo"), 220)
         persona_id = self._single_line(payload.get("persona_id"), 120)
         extra_prompt = self._multi_line(payload.get("extra_prompt"), 800)
@@ -911,7 +912,7 @@ class PrivateCompanionPageApiPersonaMixin:
             user_content=user_prompt,
         )
     async def standardize_persona_from_questionnaire(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
+        payload = await _page_api_host.request.get_json(silent=True) or {}
         umo = self._single_line(payload.get("umo"), 220)
         persona_id = self._single_line(payload.get("persona_id"), 120)
         questionnaire = payload.get("questionnaire") if isinstance(payload.get("questionnaire"), dict) else {}
@@ -1069,7 +1070,7 @@ class PrivateCompanionPageApiPersonaMixin:
             logger.error(f"人格标准化问卷生成失败: {exc}", exc_info=True)
             return self._exception_error("人格标准化问卷生成失败")
     async def generate_persona_style_scenarios(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
+        payload = await _page_api_host.request.get_json(silent=True) or {}
         base_template = self._multi_line(payload.get("base_template"), 12000)
         questionnaire = payload.get("questionnaire") if isinstance(payload.get("questionnaire"), dict) else {}
         timeout_seconds = self._float(payload.get("timeout_seconds"), 40.0, 15.0, 120.0)
@@ -1259,7 +1260,7 @@ class PrivateCompanionPageApiPersonaMixin:
             logger.error(f"人格风格试答生成失败: {exc}", exc_info=True)
             return self._exception_error("人格风格试答生成失败")
     async def retry_persona_style_scenario(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
+        payload = await _page_api_host.request.get_json(silent=True) or {}
         base_template = self._multi_line(payload.get("base_template"), 12000)
         scenario = payload.get("scenario") if isinstance(payload.get("scenario"), dict) else {}
         feedback = self._multi_line(payload.get("feedback"), 1200)
@@ -1313,7 +1314,7 @@ class PrivateCompanionPageApiPersonaMixin:
             logger.error(f"人格风格单情景重生成失败: {exc}", exc_info=True)
             return self._exception_error("人格风格单情景重生成失败")
     async def generate_persona_style_summary(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
+        payload = await _page_api_host.request.get_json(silent=True) or {}
         base_template = self._multi_line(payload.get("base_template"), 12000)
         evidence = payload.get("evidence") if isinstance(payload.get("evidence"), list) else []
         questionnaire = payload.get("questionnaire") if isinstance(payload.get("questionnaire"), dict) else {}

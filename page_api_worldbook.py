@@ -13,7 +13,8 @@ import re
 import sqlite3
 from copy import copy, deepcopy
 from typing import Any, Mapping
-from quart import request, send_file
+from quart import send_file
+from .page_api_shared import _page_api_host
 from .constants import (
     DEFAULT_DAILY_PLAN_ITEMS,
     PAGE_FONT_NAMES,
@@ -86,7 +87,7 @@ class PrivateCompanionPageApiWorldbookMixin:
             logger.error(f"导入世界书失败: {exc}", exc_info=True)
             return self._exception_error(str(exc))
     async def update_worldbook_member(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
+        payload = await _page_api_host.request.get_json(silent=True) or {}
         raw_user_id = self._single_line(payload.get("user_id"), 80)
         user_id = self._normalize_worldbook_member_id(raw_user_id)
         if not user_id:
@@ -239,7 +240,7 @@ class PrivateCompanionPageApiWorldbookMixin:
             logger.error(f"更新关系节点失败: {exc}", exc_info=True)
             return self._exception_error(str(exc))
     async def get_worldbook_member_livingmemory(self) -> dict[str, Any]:
-        user_id = self._normalize_worldbook_member_id(self._single_line(request.args.get("user_id"), 80))
+        user_id = self._normalize_worldbook_member_id(self._single_line(_page_api_host.request.args.get("user_id"), 80))
         if not user_id:
             return self._error("缺少 user_id")
         limit = self._query_int("limit", 20, 1, 60)
@@ -388,7 +389,7 @@ class PrivateCompanionPageApiWorldbookMixin:
             logger.error(f"查询关系节点 LivingMemory 失败: {exc}", exc_info=True)
             return self._exception_error(str(exc))
     async def clear_worldbook_pending_observations(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
+        payload = await _page_api_host.request.get_json(silent=True) or {}
         user_id = self._single_line(payload.get("user_id"), 40)
         try:
             async with self.plugin._data_lock:
@@ -421,7 +422,7 @@ class PrivateCompanionPageApiWorldbookMixin:
             logger.error(f"清理待确认观察失败: {exc}", exc_info=True)
             return self._exception_error("清理待确认观察失败")
     async def update_worldbook_group(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
+        payload = await _page_api_host.request.get_json(silent=True) or {}
         group_id = self._single_line(payload.get("group_id"), 40)
         if not group_id:
             return self._error("缺少 group_id")

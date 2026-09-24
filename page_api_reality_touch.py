@@ -6,7 +6,7 @@
 """
 from __future__ import annotations
 
-from quart import request
+from .page_api_shared import _page_api_host
 from typing import Any
 
 from .logging_util import get_module_logger
@@ -35,7 +35,7 @@ class PrivateCompanionPageApiRealityTouchMixin:
         )
 
     async def update_reality_touch(self) -> dict[str, Any]:
-        payload = await request.get_json(silent=True) or {}
+        payload = await _page_api_host.request.get_json(silent=True) or {}
         bridge_getter = getattr(self.plugin, "_reality_companion_api", None)
         bridge = bridge_getter() if callable(bridge_getter) else None
         linked_action = getattr(bridge, "page_action", None) if bridge is not None else None

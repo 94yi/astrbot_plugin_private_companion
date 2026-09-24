@@ -9,6 +9,14 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 
+
+def _page_api_family_source() -> str:
+    """page_api.py 的方法已随域拆分分散到 page_api_*.py，跨族聚合拼接源码。"""
+    return "\n".join(
+        (ROOT / name).read_text(encoding="utf-8")
+        for name in ["page_api.py", *sorted(p.name for p in ROOT.glob("page_api_*.py"))]
+    )
+
 PACKAGE_NAME = "c7_companion_test_package"
 package = types.ModuleType(PACKAGE_NAME)
 package.__path__ = [str(ROOT)]
@@ -84,12 +92,14 @@ class CompanionConcurrencyStaticTests(unittest.TestCase):
         for name in ("news_exploration.py", "private_image.py", "tts_enhancement.py", "user_memory.py"):
             self.assertIn("_create_lifecycle_background_task", sources[name])
 
-        page_source = sources["page_api.py"]
+        # page_api.py 的方法已随域拆分分散到 page_api_*.py，
+        # 单文件扫描会漏（86ebc90 范本：跨宿主族聚合）。
+        page_source = _page_api_family_source()
         self.assertIn("def _exception_error", page_source)
         self.assertIn("status_code=500", page_source)
 
     def test_page_error_response_is_non_success_status_without_changing_success_payload_shape(self):
-        source = (ROOT / "page_api.py").read_text(encoding="utf-8")
+        source = _page_api_family_source()
         self.assertIn('return {"success": True, "data": data, "ts": int(time.time())}', source)
         self.assertIn("def _safe_error_message", source)
         self.assertIn('"success": False', source)

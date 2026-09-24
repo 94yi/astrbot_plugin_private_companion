@@ -26,7 +26,8 @@ from .story_authority import story_legacy_operation
 from .wardrobe import WARDROBE_MAX_DESCRIPTION, WARDROBE_MAX_NAME, WARDROBE_MAX_TAG
 from copy import deepcopy
 from pathlib import Path
-from quart import request, send_file
+from quart import send_file
+from .page_api_shared import _page_api_host
 from typing import Any
 from urllib.parse import quote
 

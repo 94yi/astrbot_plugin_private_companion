@@ -6,7 +6,7 @@ from copy import deepcopy
 from types import SimpleNamespace
 from typing import Any
 
-from quart import request
+from .page_api_shared import _page_api_host
 
 from .qzone_recent_parser import parse_recent_feeds
 from .logging_util import get_module_logger
@@ -63,9 +63,9 @@ class PrivateCompanionPageApiQzoneMixin:
 
     async def get_qzone_feed(self) -> dict[str, Any]:
         try:
-            scope = self._single_line(request.args.get("scope"), 24) or "self"
-            hostuin = self._single_line(request.args.get("hostuin"), 40)
-            page = self._clamp_int(request.args.get("page"), 1, 1, 10)
+            scope = self._single_line(_page_api_host.request.args.get("scope"), 24) or "self"
+            hostuin = self._single_line(_page_api_host.request.args.get("hostuin"), 40)
+            page = self._clamp_int(_page_api_host.request.args.get("page"), 1, 1, 10)
             target = hostuin if scope == "profile" else ""
             if scope == "profile" and not target:
                 return self._ok({"items": [], "scope": scope, "target_uin": target})
@@ -207,8 +207,8 @@ class PrivateCompanionPageApiQzoneMixin:
     async def get_qzone_detail(self) -> dict[str, Any]:
         try:
             post = await self._qzone_page_resolve_post_reference(
-                self._single_line(request.args.get("id") or request.args.get("post_id"), 120),
-                request.args,
+                self._single_line(_page_api_host.request.args.get("id") or _page_api_host.request.args.get("post_id"), 120),
+                _page_api_host.request.args,
                 with_detail=True,
             )
             cookie_header = await self.plugin._qzone_get_cookies(None)
@@ -228,7 +228,7 @@ class PrivateCompanionPageApiQzoneMixin:
 
     async def publish_qzone_post(self) -> dict[str, Any]:
         try:
-            payload = await request.get_json(silent=True) or {}
+            payload = await _page_api_host.request.get_json(silent=True) or {}
             content = self._multi_line(payload.get("content") if payload.get("content") is not None else payload.get("text"), 300)
             if not content:
                 return self._error("说说内容不能为空")
@@ -241,7 +241,7 @@ class PrivateCompanionPageApiQzoneMixin:
 
     async def like_qzone_post(self) -> dict[str, Any]:
         try:
-            payload = await request.get_json(silent=True) or {}
+            payload = await _page_api_host.request.get_json(silent=True) or {}
             post = await self._qzone_page_resolve_post_reference(
                 self._single_line(payload.get("id") or payload.get("post_id"), 120),
                 payload,
@@ -262,7 +262,7 @@ class PrivateCompanionPageApiQzoneMixin:
 
     async def comment_qzone_post(self) -> dict[str, Any]:
         try:
-            payload = await request.get_json(silent=True) or {}
+            payload = await _page_api_host.request.get_json(silent=True) or {}
             post = await self._qzone_page_resolve_post_reference(
                 self._single_line(payload.get("id") or payload.get("post_id"), 120),
                 payload,
@@ -301,7 +301,7 @@ class PrivateCompanionPageApiQzoneMixin:
 
     async def delete_qzone_post(self) -> dict[str, Any]:
         try:
-            payload = await request.get_json(silent=True) or {}
+            payload = await _page_api_host.request.get_json(silent=True) or {}
             post = await self._qzone_page_resolve_post_reference(
                 self._single_line(payload.get("id") or payload.get("post_id"), 120),
                 payload,
