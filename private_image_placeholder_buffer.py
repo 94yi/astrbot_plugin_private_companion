@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import asyncio
 import re
-from .helpers import _now_ts, _safe_float, _safe_int, _single_line
-from .private_image_shared import CONTEXT_IMAGE_FAILURE_COOLDOWN_SECONDS, logger
+from .helpers import _safe_float, _safe_int, _single_line
+from .private_image_shared import CONTEXT_IMAGE_FAILURE_COOLDOWN_SECONDS, _private_image_host, logger
 from astrbot.api.event import AstrMessageEvent
 from astrbot.api.provider import ProviderRequest
 from typing import Any
@@ -295,7 +295,7 @@ class PrivateImagePlaceholderBufferMixin:
         if not isinstance(failure_cache, dict):
             failure_cache = {}
             self._context_image_caption_failure_cache = failure_cache
-        now = _now_ts()
+        now = _private_image_host._now_ts()
         cache_key = tuple(clean_sources)
         retry_after = _safe_float(failure_cache.get(cache_key), 0.0)
         if retry_after > now:
@@ -320,14 +320,14 @@ class PrivateImagePlaceholderBufferMixin:
             if caption:
                 failure_cache.pop(cache_key, None)
             else:
-                failure_cache[cache_key] = _now_ts() + CONTEXT_IMAGE_FAILURE_COOLDOWN_SECONDS
+                failure_cache[cache_key] = _private_image_host._now_ts() + CONTEXT_IMAGE_FAILURE_COOLDOWN_SECONDS
             return caption
         except asyncio.TimeoutError:
-            failure_cache[cache_key] = _now_ts() + CONTEXT_IMAGE_FAILURE_COOLDOWN_SECONDS
+            failure_cache[cache_key] = _private_image_host._now_ts() + CONTEXT_IMAGE_FAILURE_COOLDOWN_SECONDS
             logger.warning("上下文图片补全等待超时: images=%s timeout=%.1fs", len(clean_sources), wait_seconds)
             return ""
         except Exception as exc:
-            failure_cache[cache_key] = _now_ts() + CONTEXT_IMAGE_FAILURE_COOLDOWN_SECONDS
+            failure_cache[cache_key] = _private_image_host._now_ts() + CONTEXT_IMAGE_FAILURE_COOLDOWN_SECONDS
             logger.warning("上下文图片补全失败: images=%s error=%s", len(clean_sources), _single_line(exc, 120))
             return ""
 
@@ -499,7 +499,7 @@ class PrivateImagePlaceholderBufferMixin:
         initial_target_ts = deadline_ts if deadline_ts > 0 else updated_ts + wait
         if max_deadline_ts > 0:
             initial_target_ts = min(initial_target_ts, max_deadline_ts)
-        already_due = initial_target_ts > 0 and _now_ts() >= initial_target_ts
+        already_due = initial_target_ts > 0 and _private_image_host._now_ts() >= initial_target_ts
         logger.info(
             "消息收口等待开始: kind=%s scope=%s sender=%s wait=%.1fs count=%s deadline=%s",
             buffer_kind,
@@ -509,22 +509,22 @@ class PrivateImagePlaceholderBufferMixin:
             len(initial_messages),
             "fixed" if deadline_ts > 0 else "sliding",
         )
-        deadline_guard = _now_ts() if already_due else deadline_ts if deadline_ts > 0 else _now_ts() + max(wait + 2.0, min(30.0, wait * 3.0 + 2.0))
+        deadline_guard = _private_image_host._now_ts() if already_due else deadline_ts if deadline_ts > 0 else _private_image_host._now_ts() + max(wait + 2.0, min(30.0, wait * 3.0 + 2.0))
         while True:
             buffer = buffers.get(key)
             if not isinstance(buffer, dict):
                 return ""
-            updated_ts = _safe_float(buffer.get("updated_ts"), buffer.get("first_ts"), _now_ts())
+            updated_ts = _safe_float(buffer.get("updated_ts"), buffer.get("first_ts"), _private_image_host._now_ts())
             deadline_ts = _safe_float(buffer.get("deadline_ts"), deadline_ts, deadline_ts)
             max_deadline_ts = _safe_float(buffer.get("max_deadline_ts"), max_deadline_ts, max_deadline_ts)
             target_ts = deadline_ts if deadline_ts > 0 else updated_ts + wait
             if max_deadline_ts > 0:
                 target_ts = min(target_ts, max_deadline_ts)
-            remaining = max(0.0, target_ts - _now_ts())
+            remaining = max(0.0, target_ts - _private_image_host._now_ts())
             if remaining <= 0:
                 break
-            if _now_ts() + remaining > deadline_guard:
-                remaining = max(0.0, deadline_guard - _now_ts())
+            if _private_image_host._now_ts() + remaining > deadline_guard:
+                remaining = max(0.0, deadline_guard - _private_image_host._now_ts())
                 if remaining <= 0:
                     break
             await asyncio.sleep(min(remaining, 1.0))
@@ -651,7 +651,7 @@ class PrivateImagePlaceholderBufferMixin:
         if not isinstance(handoffs, dict):
             handoffs = {}
             self._private_image_vision_handoffs = handoffs
-        current_ts = _now_ts() if now is None else float(now)
+        current_ts = _private_image_host._now_ts() if now is None else float(now)
         for handoff_key, handoff in list(handoffs.items()):
             if not isinstance(handoff, dict) or _safe_float(handoff.get("expires_ts"), 0.0) <= current_ts:
                 handoffs.pop(handoff_key, None)
@@ -670,7 +670,7 @@ class PrivateImagePlaceholderBufferMixin:
         event: AstrMessageEvent,
         buffer: dict[str, Any],
     ) -> dict[str, Any]:
-        now = _now_ts()
+        now = _private_image_host._now_ts()
         handoffs = self._cleanup_private_image_vision_handoffs(now=now)
         images = [str(item) for item in (buffer.get("images") or [])[:5] if str(item or "").strip()]
         image_limit = self._private_image_vision_text_limit(len(images))

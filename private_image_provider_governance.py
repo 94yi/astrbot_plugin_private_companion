@@ -7,8 +7,8 @@
 from __future__ import annotations
 
 import re
-from .helpers import _now_ts, _safe_float, _safe_int, _single_line
-from .private_image_shared import logger
+from .helpers import _safe_float, _safe_int, _single_line
+from .private_image_shared import _private_image_host, logger
 from typing import Any
 
 
@@ -156,7 +156,7 @@ class PrivateImageProviderGovernanceMixin:
         if not self._private_image_visual_provider_source_allowed(provider_source):
             return
         clean_umo = _single_line(umo, 160)
-        now = _now_ts()
+        now = _private_image_host._now_ts()
         state = self._private_image_visual_provider_state_store()
         if not isinstance(state, dict):
             return
@@ -212,7 +212,7 @@ class PrivateImageProviderGovernanceMixin:
         state = self._private_image_visual_provider_state_store()
         recent = state.get("recent_successes") if isinstance(state, dict) else []
         clean_umo = _single_line(umo, 160)
-        now = _now_ts()
+        now = _private_image_host._now_ts()
         ordered: list[tuple[str, str, str]] = []
         used: set[str] = set()
         priority = self._normalize_private_image_vision_provider_priority(
@@ -304,7 +304,7 @@ class PrivateImageProviderGovernanceMixin:
         if not isinstance(item, dict):
             return False
         until = _safe_float(item.get("until"), 0)
-        if until <= _now_ts():
+        if until <= _private_image_host._now_ts():
             self._private_image_provider_failure_cache().pop(key, None)
             return False
         return True
@@ -328,7 +328,7 @@ class PrivateImageProviderGovernanceMixin:
             )
             return
         self._private_image_provider_failure_cache()[key] = {
-            "until": _now_ts() + cooldown,
+            "until": _private_image_host._now_ts() + cooldown,
             "provider_id": _single_line(provider_id, 160),
             "source": _single_line(provider_source, 80),
             "task": _single_line(task, 80),
