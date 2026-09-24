@@ -44,7 +44,7 @@ def _save_calls(path: Path) -> list[ast.Call]:
 
 
 def _is_official_no_arg_save_compatibility(path: Path, node: ast.Call) -> bool:
-    if path.name != "llm_tool_actions.py" or node.func.attr != "_save_data_sync":
+    if path.name != "llm_tool_actions_reaction_search.py" or node.func.attr != "_save_data_sync":
         return False
     lines = path.read_text(encoding="utf-8").splitlines()
     context = "\n".join(lines[max(0, node.lineno - 5) : node.lineno])
@@ -158,7 +158,7 @@ class IncrementalPersistenceCallsiteTests(unittest.TestCase):
                         f"{path.relative_to(ROOT).as_posix()}:{node.lineno}"
                     )
         self.assertEqual([], bare_calls)
-        self.assertEqual(["llm_tool_actions.py"], compatibility_calls)
+        self.assertEqual(["llm_tool_actions_reaction_search.py"], compatibility_calls)
 
     def test_literal_save_sections_are_registered(self) -> None:
         unknown: list[str] = []

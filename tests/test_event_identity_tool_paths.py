@@ -10,6 +10,7 @@ from astrbot_plugin_private_companion.atrelay import AtRelayMixin
 from astrbot_plugin_private_companion.llm_tool_actions import LlmToolActionsMixin
 from astrbot_plugin_private_companion.proactive_message import ProactiveMessageMixin
 from astrbot_plugin_private_companion.tts_enhancement import TtsEnhancementMixin
+from tests.module_source_index import llm_tool_actions_mixin_tree
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -169,7 +170,7 @@ class EventIdentityToolPathTests(unittest.TestCase):
 
     def test_event_identity_call_sites_are_scoped(self) -> None:
         atrelay_tree = ast.parse((ROOT / "atrelay.py").read_text(encoding="utf-8"))
-        llm_tree = ast.parse((ROOT / "llm_tool_actions.py").read_text(encoding="utf-8"))
+        llm_tree = llm_tool_actions_mixin_tree(ROOT)
 
         def method_text(tree: ast.AST, class_name: str, method_name: str) -> str:
             owner = next(

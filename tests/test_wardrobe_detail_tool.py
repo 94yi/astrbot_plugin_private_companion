@@ -18,6 +18,7 @@ from astrbot_plugin_private_companion.wardrobe_runtime import (
     WARDROBE_DETAIL_TOOL_NAME,
     WardrobeMixin,
 )
+from tests.module_source_index import llm_tool_actions_source_text
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -97,7 +98,7 @@ class WardrobeDetailToolRegistrationTests(unittest.TestCase):
 
     def test_tool_name_is_in_the_plaintext_allowlist(self) -> None:
         # 模型把工具调用当纯文本吐出来时靠这张表识别并剥离；漏掉就会在聊天里漏出 JSON。
-        source = (ROOT / "llm_tool_actions.py").read_text(encoding="utf-8")
+        source = llm_tool_actions_source_text(ROOT)
         self.assertIn(f'"{WARDROBE_DETAIL_TOOL_NAME}"', source)
 
 

@@ -17,6 +17,8 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 
+from tests.module_source_index import find_method, llm_tool_actions_source_text  # noqa: E402
+
 
 def _single_line(value: Any, limit: int = 1000) -> str:
     return re.sub(r"\s+", " ", str(value or "")).strip()[:limit]
@@ -68,12 +70,10 @@ PUBLIC_TOOL = _load_method("main.py", "PrivateCompanionPlugin", "pc_find_reactio
 
 
 def _load_reaction_impl() -> Any:
-    source = (ROOT / "llm_tool_actions.py").read_text(encoding="utf-8")
-    tree = ast.parse(source)
-    owner = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "LlmToolActionsMixin")
-    method = next(
-        node for node in owner.body if isinstance(node, ast.AsyncFunctionDef) and node.name == "_pc_find_reaction_image_impl"
+    method = find_method(
+        ROOT, "llm_tool_actions", "LlmToolActionsMixin", "_pc_find_reaction_image_impl"
     )
+    assert method is not None, "_pc_find_reaction_image_impl 未在 llm_tool_actions 族中定位"
     namespace: dict[str, Any] = {
         "Any": Any,
         "AstrMessageEvent": Any,
@@ -232,7 +232,7 @@ class ReactionSearchContextCompatibilityTests(unittest.IsolatedAsyncioTestCase):
             p.read_text(encoding="utf-8")
             for p in [ROOT / "main.py", *sorted(ROOT.glob("main_*.py"))]
         )
-        impl_source = (ROOT / "llm_tool_actions.py").read_text(encoding="utf-8")
+        impl_source = llm_tool_actions_source_text(ROOT)
 
         self.assertIn("search_context: str = \"\"", main_source)
         self.assertIn("search_context=search_context", main_source)

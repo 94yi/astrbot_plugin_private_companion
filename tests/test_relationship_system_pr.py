@@ -1450,6 +1450,10 @@ def test_legacy_relationship_state_has_no_parallel_expression_consumers() -> Non
             node = find_method(ROOT, "user_memory", class_name, method_name)
             assert node is not None, f"{class_name}.{method_name} 未找到"
             return ast.unparse(node)
+        if filename == "llm_tool_actions.py":
+            node = find_method(ROOT, "llm_tool_actions", class_name, method_name)
+            assert node is not None, f"{class_name}.{method_name} 未找到"
+            return ast.unparse(node)
         tree = ast.parse((ROOT / filename).read_text(encoding="utf-8"))
         owner = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == class_name)
         method = next(

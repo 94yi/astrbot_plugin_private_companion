@@ -673,7 +673,9 @@ def test_story_mutation_root_allowlist_is_gated_and_read_tool_stays_read_only() 
         assert bridge[name] == set()
         assert gate in ast.unparse(bridge_methods[name])
 
-    tool_tree = ast.parse((ROOT / "llm_tool_actions.py").read_text(encoding="utf-8"))
+    from module_source_index import llm_tool_actions_mixin_tree
+
+    tool_tree = llm_tool_actions_mixin_tree(ROOT)
     tool_owner = next(
         node
         for node in tool_tree.body
