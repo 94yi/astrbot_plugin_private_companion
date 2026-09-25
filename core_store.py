@@ -5894,3 +5894,5 @@ class CoreStoreMixin:
             normalized["group_id"] = _single_line(normalized.get("group_id") or group_id, 80)
             items.append(normalized)
         return sorted(items, key=lambda item: _safe_float(item.get("updated_at"), 0.0), reverse=True)
+
+import time  # re-export for tests patching core_store.time.monotonic
