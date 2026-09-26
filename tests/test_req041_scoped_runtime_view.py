@@ -376,7 +376,9 @@ class ConsumerWiringTests(unittest.TestCase):
         self.assertIn('request["namespace_context"] = namespace_context.to_dict()', source)
 
     def test_sync_save_invalidates_scoped_projection_before_persisting(self) -> None:
-        source = (ROOT / "core_store.py").read_text(encoding="utf-8")
+        # core_store.py 已按域拆分，_save_data_sync 等方法体落在 core_store_*.py，
+        # 需按宿主族聚合后再切片（与上面 page_api_users_groups.py 的取法一致）。
+        source = file_family_source_text(ROOT, "core_store.py")
         start = source.index("    def _save_data_sync(")
         method = source[start:source.index("    def _save_data_now_sync", start)]
         self.assertLess(method.index("_req041_schedule_scoped_sync"), method.index("_active_persona_scope"))
