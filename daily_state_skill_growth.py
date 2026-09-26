@@ -855,4 +855,3 @@ class DailyStateSkillGrowthMixin:
             for old in replacements:
                 normalized = normalized.replace(old, replacement)
         return _single_line(normalized, 160)
-

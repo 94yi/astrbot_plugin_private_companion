@@ -272,4 +272,3 @@ class PrivateCompanionPageApiMemoryRecallMixin:
             "preview": self._single_line(content, 260),
             "content": content[:1600],
         }
-

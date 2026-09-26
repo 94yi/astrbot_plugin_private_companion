@@ -545,4 +545,3 @@ class PrivateCompanionPageApiDiagnosticsModelMixin:
             if isinstance(items, list):
                 items.append(self._single_line(suggestion, 180))
             section["model_count"] = self._int(section.get("model_count")) + 1
-

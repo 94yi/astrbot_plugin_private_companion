@@ -205,15 +205,15 @@ _PERSONA_SETTING_MANIFEST = load_scope_manifest()
 
 _PERSONA_PROFILE_FORBIDDEN_FILENAME_CHARS = frozenset('<>:"/\\|?*%')
 
-_WINDOWS_RESERVED_FILENAME_STEMS = frozenset(
-    {
-        "CON",
-        "PRN",
-        "AUX",
-        "NUL",
-        *(f"COM{index}" for index in range(1, 10)),
-        *(f"LPT{index}" for index in range(1, 10)),
-    }
+_WINDOWS_RESERVED_FILENAME_STEMS = frozenset(
+    {
+        "CON",
+        "PRN",
+        "AUX",
+        "NUL",
+        *(f"COM{index}" for index in range(1, 10)),
+        *(f"LPT{index}" for index in range(1, 10)),
+    }
 )
 
 class _OneBotReactionImage(BaseMessageComponent):

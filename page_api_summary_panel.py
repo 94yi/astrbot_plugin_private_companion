@@ -28,5 +28,3 @@ logger = get_module_logger(__name__)
 
 class PrivateCompanionPageApiSummaryPanelMixin(PrivateCompanionPageApiSummaryPanelProfileMixin, PrivateCompanionPageApiSummaryPanelRuntimeMixin, PrivateCompanionPageApiSummaryPanelDailyMixin, PrivateCompanionPageApiSummaryPanelContentMixin):
     """面板摘要域（从 PrivateCompanionPageApi 拆出）。"""
-
-

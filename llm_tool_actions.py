@@ -105,5 +105,3 @@ class LlmToolActionsMixin(LlmToolActionsQzoneMixin, LlmToolActionsPhotoPromptMix
 
     def _reaction_asset_library(self):
         return get_reaction_asset_library(self)
-
-

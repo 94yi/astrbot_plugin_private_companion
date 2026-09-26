@@ -434,4 +434,3 @@ class PrivateCompanionPluginAtrelayRelayMixin:
         await self._send_direct_atrelay_result_reply(event, payload, result)
         event.stop_event()
         return True
-

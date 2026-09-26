@@ -625,4 +625,3 @@ class PrivateCompanionPageApiSummaryPanelProfileMixin:
             "frozen_count": sum(1 for item in items if item.get("frozen")),
             "items": items[:120],
         }
-

@@ -761,4 +761,3 @@ class PrivateCompanionPluginReactionExpressionMixin:
             send=send,
             caption=caption,
         )
-

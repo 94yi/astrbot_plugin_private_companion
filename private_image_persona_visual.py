@@ -770,4 +770,3 @@ class PrivateImagePersonaVisualMixin:
             if content:
                 messages.append({"role": role, "content": content})
         return messages[-max(1, min(int(limit or 3), 6)) :]
-

@@ -518,4 +518,3 @@ class PrivateCompanionPageApiSummaryPanelContentMixin:
                 for item in items[-6:]
             ],
         }
-

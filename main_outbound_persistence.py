@@ -790,4 +790,3 @@ class PrivateCompanionPluginOutboundPersistenceMixin:
             except Exception:
                 pass
         return chain, changed
-

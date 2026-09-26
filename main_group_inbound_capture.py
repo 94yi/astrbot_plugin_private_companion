@@ -614,4 +614,3 @@ class PrivateCompanionPluginGroupInboundCaptureMixin:
                 sender_id,
             )
             self._stop_group_member_safety_event(event)
-

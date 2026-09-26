@@ -645,4 +645,3 @@ class PrivateCompanionPluginLifecycleMixin:
                     persona_id,
                     snapshot,
                 )
-

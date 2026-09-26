@@ -298,4 +298,3 @@ class ProactiveEngineBirthdayMixin:
             "_scheduled_ts": scheduled,
             "_birthday_curiosity": True,
         }
-

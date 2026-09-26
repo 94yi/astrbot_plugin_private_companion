@@ -326,4 +326,3 @@ class DailyStateSleepMixin:
         updated["last_group_wakeup_text"] = _single_line(text, 80)
         updated["last_group_wakeup_type"] = _single_line(wakeup_type, 40)
         return updated
-

@@ -59,4 +59,3 @@ class PrivateCompanionPageApiBookshelfRemainingMixin:
         if not sampled_pages:
             sampled_pages = sorted(page_by_index)[:5]
         return cover_path, [page_by_index[page] for page in sampled_pages if page in page_by_index], sampled_pages
-

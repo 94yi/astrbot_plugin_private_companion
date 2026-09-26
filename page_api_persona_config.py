@@ -916,4 +916,3 @@ class PrivateCompanionPageApiPersonaConfigMixin(PrivateCompanionPageApiPersonaFl
             user_title="人格风格指纹归纳输入",
             user_content=user_prompt,
         )
-

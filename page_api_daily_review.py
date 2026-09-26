@@ -70,4 +70,3 @@ class PrivateCompanionPageApiDailyReviewMixin:
         except Exception as exc:
             logger.error("更新每日巡视指导失败: %s", self._single_line(exc, 180), exc_info=True)
             return self._error(str(exc))
-

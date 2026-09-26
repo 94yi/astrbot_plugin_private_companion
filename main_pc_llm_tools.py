@@ -507,4 +507,3 @@ class PrivateCompanionPluginPcLlmToolsMixin:
         if self is None or self._proactive_only_blocks_passive_event(event, "pc_tools"):
             return '{"status":"disabled","message":"主动消息专用模式下，普通被动回复不可使用 Private Companion 工具。"}'
         return await self._pc_query_interaction_impl(event, **kwargs)
-

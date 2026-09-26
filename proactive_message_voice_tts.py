@@ -628,4 +628,3 @@ class ProactiveMessageVoiceTtsMixin:
         return _single_line(_strip_internal_message_blocks(
             source, tts_enabled=bool(runtime_persona_setting(self, "enable_tts_enhancement", False))
         ), limit)
-

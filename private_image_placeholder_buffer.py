@@ -696,4 +696,3 @@ class PrivateImagePlaceholderBufferMixin:
         }
         handoffs[key] = handoff
         return handoff
-

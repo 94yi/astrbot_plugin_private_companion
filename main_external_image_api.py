@@ -234,4 +234,3 @@ class PrivateCompanionPluginExternalImageApiMixin:
             seen.add(signature)
             normalized.append(endpoint)
         return normalized
-

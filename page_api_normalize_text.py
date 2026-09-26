@@ -175,4 +175,3 @@ class PrivateCompanionPageApiNormalizeTextMixin:
     @staticmethod
     def _exception_error(message: str = "内部操作失败") -> dict[str, Any]:
         return PrivateCompanionPageApiNormalizeTextMixin._error(message, status_code=500)
-

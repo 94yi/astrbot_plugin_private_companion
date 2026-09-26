@@ -287,4 +287,3 @@ class PrivateCompanionPluginRestReplyMixin:
         if not lines:
             return ""
         return "休息时有几条私聊没来得及回，醒来后补看到：\n" + "\n".join(lines)
-

@@ -286,4 +286,3 @@ class ProactiveEngineAbilityMixin:
                 f"- {item.get('module')}/{name}：{label}｜{when}"
             )
         return "\n".join(lines)
-

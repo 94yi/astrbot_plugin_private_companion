@@ -596,4 +596,3 @@ class PrivateCompanionPageApiExternalApiTestMixin:
             *steps,
         ]
         return result
-

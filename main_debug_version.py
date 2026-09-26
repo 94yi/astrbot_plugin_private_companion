@@ -191,4 +191,3 @@ class PrivateCompanionPluginDebugVersionMixin:
                 parts.append(detail_injection)
             return "\n\n".join(parts)
         return "可查看的提示词类型：日程 / 细化 / 主动 / 回复注入"
-

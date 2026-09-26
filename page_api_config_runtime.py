@@ -107,4 +107,3 @@ class PrivateCompanionPageApiConfigRuntimeMixin:
         )
         self.plugin._body_monitor_integration_toggle_task = task
         return task
-

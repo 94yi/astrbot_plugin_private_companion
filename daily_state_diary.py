@@ -983,4 +983,3 @@ class DailyStateDiaryMixin:
             _single_line(diary.get("summary"), 100),
         ]
         return next((item for item in candidates if item), "")
-

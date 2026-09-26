@@ -283,4 +283,3 @@ class PrivateCompanionPluginTtsResponseMixin:
                 _single_line(sent_photo_caption, 120),
             )
         return original_text, recovered_text
-

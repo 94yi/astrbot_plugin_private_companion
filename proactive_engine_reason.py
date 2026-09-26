@@ -518,4 +518,3 @@ class ProactiveEngineReasonMixin:
             if any(keyword in text for keyword in keywords):
                 return True
         return False
-

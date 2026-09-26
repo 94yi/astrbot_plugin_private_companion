@@ -102,4 +102,3 @@ class PrivateCompanionPluginUtilSmallMixin:
         if seconds < 86400:
             return f"{int(seconds // 3600)} 小时前"
         return f"{int(seconds // 86400)} 天前"
-

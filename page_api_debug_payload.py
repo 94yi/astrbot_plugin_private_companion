@@ -116,4 +116,3 @@ class PrivateCompanionPageApiDebugPayloadMixin:
                     else:
                         metadata["content"] = raw.decode("utf-8", "replace")
                     break
-

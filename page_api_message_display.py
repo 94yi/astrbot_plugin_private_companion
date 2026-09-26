@@ -83,4 +83,3 @@ class PrivateCompanionPageApiMessageDisplayMixin:
         hours = minutes // 60
         rest = minutes % 60
         return f"{hours} 小时 {rest} 分钟" if rest else f"{hours} 小时"
-

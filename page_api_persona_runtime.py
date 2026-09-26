@@ -830,4 +830,3 @@ class PrivateCompanionPageApiPersonaRuntimeMixin:
             )
 
         return suggestions[:5]
-

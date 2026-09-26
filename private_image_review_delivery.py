@@ -574,4 +574,3 @@ class PrivateImageReviewDeliveryMixin:
             "review_label": label,
             "message": "图片不适合在群内发送，但无法定位原请求者的私聊会话。",
         }
-

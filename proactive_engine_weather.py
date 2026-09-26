@@ -121,4 +121,3 @@ class ProactiveEngineWeatherMixin:
             return not bool(repeated(user, "ordinary_weather_topic"))
         except Exception:
             return True
-

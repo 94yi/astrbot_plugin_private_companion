@@ -324,4 +324,3 @@ class ProactiveEngineMotiveMixin:
             "轻轻问你一句", "先冒出来的是你", "就想顺手跟你说句话",
         )
         return any(token in text for token in vague_tokens)
-

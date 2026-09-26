@@ -422,4 +422,3 @@ class PrivateImageProviderGovernanceMixin:
             ],
             "recent_success_count": len(recent) if isinstance(recent, list) else 0,
         }
-

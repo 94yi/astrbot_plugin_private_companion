@@ -253,4 +253,3 @@ class PrivateCompanionPluginPhotoToolMixin:
                 "pc_generate_photo 工具提示词格式标注失败: %s",
                 _single_line(exc, 120),
             )
-

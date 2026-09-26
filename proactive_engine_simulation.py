@@ -490,4 +490,3 @@ class ProactiveEngineSimulationMixin:
             f"转述：{_single_line(narrated, 180)}\n"
             f"最终消息：\n{text}{failure_note}"
         ), image_path, extra_components
-

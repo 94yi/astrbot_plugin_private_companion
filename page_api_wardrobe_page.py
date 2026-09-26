@@ -96,4 +96,3 @@ class PrivateCompanionPageApiWardrobePageMixin:
             logger.warning("穿衣意图清除失败: %s", self._single_line(exc, 160), exc_info=True)
             return self._error("清除穿衣意图失败，请稍后再试")
         return self._ok({"cleared": cleared})
-

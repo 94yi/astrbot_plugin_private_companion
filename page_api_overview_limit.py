@@ -202,7 +202,7 @@ class PrivateCompanionPageApiOverviewLimitMixin:
                 item["lifecycle"] = "planned"
         return items
 
-    def _limited_story_items(self, 
+    def _limited_story_items(self,
         value: Any,
         limit: int,
         *,
@@ -336,4 +336,3 @@ class PrivateCompanionPageApiOverviewLimitMixin:
     @staticmethod
     def _limited_list(value: Any, limit: int) -> list[Any]:
         return list(value[:limit]) if isinstance(value, list) else []
-

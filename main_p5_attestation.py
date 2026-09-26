@@ -218,4 +218,3 @@ class PrivateCompanionPluginP5AttestationMixin:
             [section],
             mode=PromptRenderMode.LABELED_BLOCK,
         )
-

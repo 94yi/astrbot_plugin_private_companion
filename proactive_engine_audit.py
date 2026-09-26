@@ -505,4 +505,3 @@ class ProactiveEngineAuditMixin:
             lines.append("判定分解：")
             lines.extend(factor_lines[:12])
         return "\n".join(lines)
-

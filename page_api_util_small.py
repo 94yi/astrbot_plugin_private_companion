@@ -107,4 +107,3 @@ class PrivateCompanionPageApiUtilSmallMixin:
         except (TypeError, ValueError):
             value = default
         return max(minimum, min(maximum, value))
-

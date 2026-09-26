@@ -83,4 +83,3 @@ class PrivateCompanionPageApiRealityTouchMixin:
             )
         normalized["mihome"] = mihome
         return normalized
-

@@ -241,4 +241,3 @@ class PrivateCompanionPageApiChainTestMixin:
             and not re.search(r"(?:^|:)GroupMessage(?=:|$)", text, flags=re.IGNORECASE)
             and re.search(r"(?:^|:)FriendMessage(?=:|$)", text, flags=re.IGNORECASE)
         )
-

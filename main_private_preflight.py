@@ -131,4 +131,3 @@ class PrivateCompanionPluginPrivatePreflightMixin:
             ):
                 return True
         return False
-

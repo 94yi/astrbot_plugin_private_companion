@@ -111,4 +111,3 @@ class PrivateCompanionPluginScopeGuardMixin:
                     _single_line(exc, 160),
                 )
         self._sanitize_private_companion_prompt_artifacts_in_request(event, req)
-

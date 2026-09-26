@@ -32,4 +32,3 @@ class PrivateCompanionPluginBodyMonitorMixin:
         if integration is None:
             return ""
         return integration.format_health_prompt(user, reason=reason)
-

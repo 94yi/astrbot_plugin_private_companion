@@ -989,4 +989,3 @@ class LlmToolActionsQzoneMixin:
             )
         result = await self._publish_qzone_text(content, event, images=images, auto_generate_image=True)
         return json.dumps({"status": "success" if result.get("success") else "error", **result}, ensure_ascii=False)
-

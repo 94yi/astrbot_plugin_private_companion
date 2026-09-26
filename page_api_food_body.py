@@ -480,4 +480,3 @@ class PrivateCompanionPageApiFoodBodyMixin:
                         "Body Monitor 联动即时拉取触发失败: %s",
                         self._single_line(exc, 160),
                     )
-

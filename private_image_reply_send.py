@@ -19,6 +19,7 @@ from .segmented_message import (
     plan_component_chunks,
 )
 from astrbot.api.event import AstrMessageEvent
+from astrbot.api.message_components import Plain
 from typing import Any
 
 
@@ -808,4 +809,3 @@ class PrivateImageReplySendMixin:
             _single_line(vision_text, 160),
         )
         return vision_text
-

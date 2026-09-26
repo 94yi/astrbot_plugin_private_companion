@@ -99,7 +99,7 @@ from .constants import (
     _DEFAULT_GROUP_TEMPLATE,
     _DEFAULT_USER_TEMPLATE,
     _REASON_TEXT,
-    _SIMULATION_FALLBACK_EVENTS,
+    _SIMULATION_FALLBACK_EVENTS,
 )
 from .persona_config import runtime_persona_setting
 from .conversation_prompt_section import (
@@ -108,7 +108,7 @@ from .conversation_prompt_section import (
     prompt_heading_ref,
     prompt_section,
     render_prompt_content,
-    render_prompt_sections,
+    render_prompt_sections,
 )
 from .dreaming import (
     build_dream_memory_fragments,
@@ -124,24 +124,24 @@ from .dreaming import (
     normalize_dream_fragment_pool,
     recent_diary_context,
     recent_diary_tags,
-    weighted_unique_fragment_sample,
+    weighted_unique_fragment_sample,
 )
 from .helpers import _date_key, _normalize_photo_subject_owner, _now_ts, _photo_subject_owner_prompt_label, _safe_float, _safe_int, _single_address, _single_line, _strip_internal_message_blocks, _today_key
 from .relationship_policy import relationship_stage_for_score
 from .expression_scope_ownership import (
     bind_expression_item,
-    bind_expression_profile,
+    bind_expression_profile,
 )
 from .authoritative_private_memory import (
     AuthoritativePrivateMemoryError,
     AuthoritativePrivateMemoryStore,
     apply_private_memory_content,
-    private_memory_content,
+    private_memory_content,
 )
 from .scoped_runtime_view import scoped_approved_expression_rules
 from .companion_interaction_expression import (
     build_expression_decision,
-    current_interaction_projection,
+    current_interaction_projection,
 )
 from .domains.affect.emotion_event_ledger import record_recent_emotion_event
 from .domains.affect.interaction_dynamics import project_interaction_dynamics, settle_interaction_dynamics
@@ -156,7 +156,7 @@ from .planning import (
     normalize_long_term_events,
     normalize_story_items,
     normalize_story_plan,
-    pick_detail_segment,
+    pick_detail_segment,
 )
 from .companion_memory_records import normalize_memory_items, relevant_memory_items
 from .private_identity_policy import format_private_identity_anchor
@@ -175,7 +175,7 @@ DEFAULT_NEWS_SOURCES = "\n".join(
         "MIT Technology Review|https://www.technologyreview.com/feed/",
         "Ars Technica|https://feeds.arstechnica.com/arstechnica/index",
         DEFAULT_AI_DAILY_NEWS_SOURCE,
-    ]
+    ]
 )
 
 LEGACY_DEFAULT_NEWS_SOURCES = "\n".join(
@@ -183,7 +183,7 @@ LEGACY_DEFAULT_NEWS_SOURCES = "\n".join(
         "BBC中文|https://feeds.bbci.co.uk/zhongwen/simp/rss.xml",
         "Google新闻中文|https://news.google.com/rss?hl=zh-CN&gl=CN&ceid=CN:zh-Hans",
         "Solidot|https://www.solidot.org/index.rss",
-    ]
+    ]
 )
 
 PREVIOUS_TECH_DEFAULT_NEWS_SOURCES = "\n".join(
@@ -194,7 +194,7 @@ PREVIOUS_TECH_DEFAULT_NEWS_SOURCES = "\n".join(
         "Hacker News|https://hnrss.org/frontpage",
         "MIT Technology Review|https://www.technologyreview.com/feed/",
         "Ars Technica|https://feeds.arstechnica.com/arstechnica/index",
-    ]
+    ]
 )
 
 
@@ -930,4 +930,3 @@ class UserMemoryMixin(UserMemoryExpressionRuleMixin, UserMemoryExpressionVoiceMi
             re.search(r"(刚才|刚刚|上句|上一句|那句|这句|你刚说)", compact)
             and re.search(r"(再说|再发|重发|重复|复述|原话|原文|复制)", compact)
         )
-

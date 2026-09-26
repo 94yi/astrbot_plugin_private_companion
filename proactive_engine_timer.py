@@ -220,4 +220,3 @@ class ProactiveEngineTimerMixin:
         )
         self._store_planned_proactive_route_fields(user, {**event, "source": "timer"})
         return True
-

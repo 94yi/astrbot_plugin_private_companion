@@ -402,4 +402,3 @@ class PrivateImageModelCapabilityMixin:
             "traceback",
         )
         return any(marker in lowered for marker in markers)
-

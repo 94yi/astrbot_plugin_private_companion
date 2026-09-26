@@ -114,4 +114,3 @@ class PrivateCompanionPluginTokenUsageMixin:
             setattr(event, "private_companion_group_semantic_usage_pending", True)
         except Exception:
             pass
-

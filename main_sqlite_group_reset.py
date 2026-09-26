@@ -268,4 +268,3 @@ class PrivateCompanionPluginSqliteGroupResetMixin:
             "operation_id": clean_operation, "config_saved": True,
             **local, "scoped_cleanup": remote,
         }
-

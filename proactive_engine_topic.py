@@ -227,4 +227,3 @@ class ProactiveEngineTopicMixin:
         if reason == "quiet_care" and last_user_message:
             return last_user_message
         return ""
-

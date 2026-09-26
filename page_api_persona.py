@@ -46,4 +46,3 @@ logger = get_module_logger(__name__)
 
 class PrivateCompanionPageApiPersonaMixin(PrivateCompanionPageApiPersonaRuntimeMixin, PrivateCompanionPageApiPersonaConfigMixin):
     """人格 / 人设 / 角色扮演草稿 域（从 PrivateCompanionPageApi 拆出）。"""
-

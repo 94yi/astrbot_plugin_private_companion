@@ -109,4 +109,3 @@ class PrivateCompanionPageApiPluginMetaMixin:
         if isinstance(value, list):
             return [self._strip_runtime_data(item) for item in value]
         return value
-

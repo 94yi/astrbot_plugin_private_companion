@@ -195,7 +195,7 @@ class PrivateCompanionPluginCompanionCommandMixin:
             return True
         return False
 
-    async def _companion_command_qzone_actions(self, event: Any, response: Any) -> bool:
+    async def _companion_command_qzone_actions(self, event: Any, response: Any, action: Any, value: Any) -> bool:
         """陪伴指令尾段：QQ 空间发布与链路自检、AI 日报 / 新闻。返回 True 表示已收口。"""
         if action in {"发说说", "发QQ空间", "发布说说", "空间发布", "发布空间"}:
             image_sources = await self._qzone_image_sources_from_event(event)
@@ -251,7 +251,7 @@ class PrivateCompanionPluginCompanionCommandMixin:
             return True
         return False
 
-    async def _companion_command_reset_actions(self, event: Any, response: Any) -> None:
+    async def _companion_command_reset_actions(self, event: Any, response: Any, action: Any, value: Any) -> None:
         """陪伴指令尾段：夹层密码重置、人格 / 插件重置、日程重生成与取消。"""
         if action in bookshelf_password_reset_actions:
             await self._reply(event, response)
@@ -320,7 +320,7 @@ class PrivateCompanionPluginCompanionCommandMixin:
             _, message = await self._cancel_daily_plan_segment_by_selector(value)
             await self._reply(event, message)
 
-    async def _companion_command_generate_actions(self, event: Any, user: Any) -> bool:
+    async def _companion_command_generate_actions(self, event: Any, user: Any, action: Any, value: Any) -> bool:
         """陪伴指令尾段：穿搭 / 状态 / 提示词 / 细化 / 日记 / 梦境。返回 True 表示已收口。"""
         if action in daily_outfit_generate_actions:
             outfit_generator = getattr(self, "_ensure_daily_outfit_photo", None)
@@ -407,4 +407,3 @@ class PrivateCompanionPluginCompanionCommandMixin:
                 state = await self._ensure_daily_state(force=True)
             await self._reply(event, self._format_dream_view(state or {}))
         return False
-

@@ -710,4 +710,3 @@ class ProactiveMessageTextFinalizeMixin:
         )
         style_hint = f"；参考语气偏好：{style}" if style else ""
         return "check_in", f"无明确来源时的轻量开场{style_hint}；优先贴近关系事实、当前状态或当前日程，不使用固定模板。"
-

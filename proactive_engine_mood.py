@@ -334,4 +334,3 @@ class ProactiveEngineMoodMixin:
             "context": context,
             "origin_event_id": f"absence_miss:{episode_key}",
         }
-

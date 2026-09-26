@@ -354,4 +354,3 @@ class ProactiveEnginePhotoMixin:
         except Exception as exc:
             logger.debug("主动生图规划可用性检查失败: %s", _single_line(exc, 120))
             return False
-

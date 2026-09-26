@@ -519,4 +519,3 @@ class PrivateCompanionPageApiSummaryPanelDailyMixin:
             "adjustments": self._limited_adjustments(adjustments),
             "qq_presence_state": presence,
         }
-

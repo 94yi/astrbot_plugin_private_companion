@@ -506,4 +506,3 @@ class PrivateCompanionPageApiCalendarDailyMixin:
             )
             fallback = self._setup_guide_fallback_daily_plan("error")
             return fallback, "fallback_error", False
-

@@ -484,4 +484,3 @@ class PrivateCompanionPageApiProviderBindingMixin:
             cls._provider_config_value(provider, "type", "provider_type")
             or provider.__class__.__name__
         )
-

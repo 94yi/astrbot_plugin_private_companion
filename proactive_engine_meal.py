@@ -269,4 +269,3 @@ class ProactiveEngineMealMixin:
         current = self._environment_fromtimestamp(_engine_host._now_ts() if now is None else now)
         # 23:00-05:59 is one night, even though it crosses midnight.
         return (current - timedelta(hours=6)).date().isoformat()
-

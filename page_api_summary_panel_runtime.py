@@ -629,4 +629,3 @@ class PrivateCompanionPageApiSummaryPanelRuntimeMixin:
             "conflict": conflict,
             "conflict_warning": conflict_warning,
         }
-

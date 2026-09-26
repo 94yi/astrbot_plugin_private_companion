@@ -588,4 +588,3 @@ class PrivateCompanionPageApiConfigSchemaMixin:
         item_map = self._schema_key_index().get("item")
         item = item_map.get(key) if isinstance(item_map, dict) else None
         return item if isinstance(item, dict) else {}
-

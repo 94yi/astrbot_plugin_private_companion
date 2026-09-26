@@ -329,4 +329,3 @@ class ProactiveEngineActionMixin:
             return primary
         candidates.append((primary, 1.0))
         return self._weighted_choice(candidates)
-

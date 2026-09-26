@@ -958,4 +958,3 @@ class LlmToolActionsReactionExecMixin:
             "reason": _single_line(payload.get("reason"), 120),
             "provider_id": provider_id,
         }
-

@@ -405,4 +405,3 @@ class PrivateCompanionPluginProviderConfigMixin:
         if self is None or event is None:
             return
         await self._complete_official_llm_timer_event(event)
-

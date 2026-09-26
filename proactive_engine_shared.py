@@ -17,41 +17,41 @@ from typing import Any
 
 from .helpers import _single_line
 from .persona_config import runtime_persona_setting
-def _engine_proactive_window_timezone(owner: Any) -> str:
-    """Resolve the scheduling timezone without requiring another mixin."""
-
-    getter = getattr(owner, "_proactive_window_timezone", None)
-    if callable(getter):
-        try:
-            value = _single_line(getter(), 64)
-        except Exception:
-            value = ""
-        if value:
-            return value
-    return (
-        _single_line(
-            getattr(owner, "environment_perception_timezone", ""),
-            64,
-        )
-        or "Asia/Shanghai"
-    )
+def _engine_proactive_window_timezone(owner: Any) -> str:
+    """Resolve the scheduling timezone without requiring another mixin."""
 
-def _persona_provider_id(owner: Any, canonical_key: str, legacy_attr: str, quick_role: str) -> str:
-    """Resolve canonical persona provider settings while preserving test harnesses."""
-    fallback = str(getattr(owner, legacy_attr, "") or "").strip()
-    if not callable(getattr(owner, "persona_setting", None)):
-        return fallback
-    mode = str(getattr(owner, "provider_config_mode", "quick") or "quick").strip().lower()
-    if mode != "quick":
-        return str(runtime_persona_setting(owner, canonical_key, fallback) or "").strip()
-    complex_id = str(runtime_persona_setting(owner, "COMPLEX_REASONING_PROVIDER_ID", "") or "").strip()
-    if quick_role == "complex":
-        return complex_id or fallback
-    if quick_role == "creative":
-        creative_id = str(runtime_persona_setting(owner, "CREATIVE_MODEL_PROVIDER_ID", "") or "").strip()
-        return creative_id or complex_id or fallback
-    fast_id = str(runtime_persona_setting(owner, "FAST_RESPONSE_PROVIDER_ID", "") or "").strip()
-    return fast_id or complex_id or fallback
+    getter = getattr(owner, "_proactive_window_timezone", None)
+    if callable(getter):
+        try:
+            value = _single_line(getter(), 64)
+        except Exception:
+            value = ""
+        if value:
+            return value
+    return (
+        _single_line(
+            getattr(owner, "environment_perception_timezone", ""),
+            64,
+        )
+        or "Asia/Shanghai"
+    )
+
+def _persona_provider_id(owner: Any, canonical_key: str, legacy_attr: str, quick_role: str) -> str:
+    """Resolve canonical persona provider settings while preserving test harnesses."""
+    fallback = str(getattr(owner, legacy_attr, "") or "").strip()
+    if not callable(getattr(owner, "persona_setting", None)):
+        return fallback
+    mode = str(getattr(owner, "provider_config_mode", "quick") or "quick").strip().lower()
+    if mode != "quick":
+        return str(runtime_persona_setting(owner, canonical_key, fallback) or "").strip()
+    complex_id = str(runtime_persona_setting(owner, "COMPLEX_REASONING_PROVIDER_ID", "") or "").strip()
+    if quick_role == "complex":
+        return complex_id or fallback
+    if quick_role == "creative":
+        creative_id = str(runtime_persona_setting(owner, "CREATIVE_MODEL_PROVIDER_ID", "") or "").strip()
+        return creative_id or complex_id or fallback
+    fast_id = str(runtime_persona_setting(owner, "FAST_RESPONSE_PROVIDER_ID", "") or "").strip()
+    return fast_id or complex_id or fallback
 
 
 

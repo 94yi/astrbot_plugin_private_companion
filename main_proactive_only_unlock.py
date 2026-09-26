@@ -208,4 +208,3 @@ class PrivateCompanionPluginProactiveOnlyUnlockMixin:
             user_id,
             _single_line(text, 80) or "非文本消息",
         )
-

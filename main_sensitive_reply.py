@@ -115,4 +115,3 @@ class PrivateCompanionPluginSensitiveReplyMixin:
                 resp.completion_text = ""
             except Exception:
                 pass
-

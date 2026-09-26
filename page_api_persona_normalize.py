@@ -635,4 +635,3 @@ class PrivateCompanionPageApiPersonaNormalizeMixin:
             "completed_count": sum(1 for item in items if item["status"] == "completed"),
             "items": items[:80],
         }
-

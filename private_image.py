@@ -78,4 +78,3 @@ class _PublicOnlyRedirectHandler(urllib.request.HTTPRedirectHandler):
 
 class PrivateImageMixin(PrivateImageModelCapabilityMixin, PrivateImageProviderGovernanceMixin, PrivateImageReviewDeliveryMixin, PrivateImagePlaceholderBufferMixin, PrivateImagePersonaVisualMixin, PrivateImageReplySendMixin, PrivateImageTranscribeGroupMixin, PrivateImageIngestCacheMixin, PrivateImageHistoryDelayedMixin):
     """Methods split from main.PrivateCompanionPlugin."""
-

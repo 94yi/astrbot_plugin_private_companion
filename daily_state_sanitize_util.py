@@ -646,4 +646,3 @@ class DailyStateSanitizeUtilMixin:
                     if isinstance(parsed, (dict, list)):
                         return parsed
         return None
-

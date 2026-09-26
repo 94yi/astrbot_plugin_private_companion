@@ -627,4 +627,3 @@ class PrivateCompanionPageApiDiagnosticsChecksMixin:
         else:
             add("ok", "配置诊断无待处理警告", "现有未屏蔽诊断项没有 warn/error。", "", "dashboard")
         return checks
-

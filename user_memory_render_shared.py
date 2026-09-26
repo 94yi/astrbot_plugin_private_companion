@@ -40,4 +40,3 @@ def _render_user_memory_background_prompt(section: PromptSection) -> str:
 
 def _render_user_memory_labeled_section(section: PromptSection) -> str:
     return render_prompt_sections([section], mode=PromptRenderMode.LABELED_BLOCK)
-
