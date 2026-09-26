@@ -316,6 +316,31 @@ def test_strict_llm_provider_skips_peak_replacement_and_fallback() -> None:
         def _sensitive_model_replacement_keyword(_completion: str) -> str:
             return ""
 
+        def _apply_task_prompt_override_for_call(self, task, prompt, system_prompt=None):
+            return prompt, system_prompt
+
+        @staticmethod
+        def _llm_backoff_key(task: str, provider_id: str, prompt: str) -> str:
+            return f"{task}:{provider_id}:{prompt}"
+
+        def _llm_request_retry_after(self, key: str, *, defer: bool = False) -> float:
+            return 0.0
+
+        @staticmethod
+        def _background_llm_request_policy(*_args: Any, **_kwargs: Any) -> dict:
+            return {}
+
+        @staticmethod
+        def _llm_result_unknown_timeout(_e: Any) -> bool:
+            return False
+
+        @staticmethod
+        def _llm_streaming_enabled_for_call(*_args: Any, **_kwargs: Any) -> bool:
+            return False
+
+        def _llm_context_retry_kwargs(self, provider_id: str, policy: dict) -> dict:
+            return {}
+
     Host._llm_call = llm_call
     host = Host()
     result = asyncio.run(

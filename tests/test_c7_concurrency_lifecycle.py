@@ -7,7 +7,7 @@ import sys
 import types
 import unittest
 
-from tests.module_source_index import user_memory_source_text
+from tests.module_source_index import user_memory_source_text, file_family_source_text
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -54,7 +54,7 @@ class CompanionConcurrencyStaticTests(unittest.TestCase):
             path.read_text(encoding="utf-8")
             for path in [ROOT / "main.py", *sorted(ROOT.glob("main_*.py"))]
         )
-        pipeline_source = (ROOT / "message_pipeline.py").read_text(encoding="utf-8")
+        pipeline_source = file_family_source_text(ROOT, "message_pipeline.py")
         self.assertIn("async def _temporarily_release_data_lock", main_source)
         # Official v6.0.4b moves passive handlers into message_pipeline.py.
         self.assertGreaterEqual(pipeline_source.count("async with self._temporarily_release_data_lock()"), 7)
@@ -77,7 +77,7 @@ class CompanionConcurrencyStaticTests(unittest.TestCase):
 
     def test_chat_side_background_boundaries_consume_failures_and_keep_http_errors(self):
         sources = {
-            name: (ROOT / name).read_text(encoding="utf-8")
+            name: file_family_source_text(ROOT, name)
             for name in (
                 "config_migration.py",
                 "news_exploration.py",
@@ -87,7 +87,6 @@ class CompanionConcurrencyStaticTests(unittest.TestCase):
                 "user_memory.py",
             )
         }
-        sources["user_memory.py"] = user_memory_source_text(ROOT)
         config_source = sources["config_migration.py"]
         self.assertIn("_private_companion_config_save_tasks", config_source)
         self.assertIn("done_task.result()", config_source)

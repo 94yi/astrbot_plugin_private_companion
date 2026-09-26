@@ -23,7 +23,7 @@ from scoped_runtime_view import (
 ROOT = Path(__file__).resolve().parents[1]
 
 from tests.module_source_index import class_matches_host as _class_matches
-from tests.module_source_index import proactive_message_source_text
+from tests.module_source_index import proactive_message_source_text, file_family_source_text
 
 
 def _approved_rule(rule_id: str, evidence_count: int = 1, *, kind: str = "private") -> dict:
@@ -358,7 +358,7 @@ class ConsumerWiringTests(unittest.TestCase):
         self.assertIn("snapshot_getter(user, source=\"proactive_chat_bridge\")", proactive)
 
     def test_admin_nickname_and_style_write_person_facts(self) -> None:
-        page = (ROOT / "page_api_users_groups.py").read_text(encoding="utf-8")
+        page = file_family_source_text(ROOT, "page_api_users_groups.py")
         self.assertIn("_req041_update_unified_profile_facts", page)
         self.assertIn('profile_fact_changes["preferred_address"] = user["nickname"]', page)
         self.assertIn('profile_fact_changes["style"] = user["style"]', page)

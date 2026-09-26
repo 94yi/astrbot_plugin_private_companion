@@ -72,7 +72,7 @@ GLOBALS = {
     "deepcopy": deepcopy,
     "datetime": datetime,
     "_single_line": _single_line,
-    "_strip_internal_message_blocks": lambda value: str(value or ""),
+    "_strip_internal_message_blocks": lambda value, *, enabled=True: str(value or ""),
     "_safe_float": _safe_float,
     "_safe_int": _safe_int,
     "_now_ts": lambda: 1000.0,

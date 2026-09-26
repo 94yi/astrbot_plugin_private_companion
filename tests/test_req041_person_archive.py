@@ -17,7 +17,7 @@ from migration_outbox import MigrationOutbox
 from migration_scoped_projection import ScopedProjectionSynchronizer, scoped_persona_ref
 from relationship_account_store import RelationshipAccountStore
 from unified_person_registry import UnifiedPersonRegistry
-from tests.module_source_index import class_body_defs
+from tests.module_source_index import class_body_defs, class_body_defs_for_file
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -72,14 +72,14 @@ class _Request:
 
 
 def _load_page_archive():
+    # page_api_users_groups.py 拆分后 archive_unified_person 落在
+    # page_api_users_groups_part*.py，按宿主文件名聚合类体（module_source_index）。
     path = ROOT / "page_api_users_groups.py"
-    tree = ast.parse(path.read_text(encoding="utf-8"))
-    owner = next(
-        node for node in tree.body
-        if isinstance(node, ast.ClassDef) and node.name == "PrivateCompanionPageApiUsersGroupsMixin"
-    )
     method = next(
-        copy.deepcopy(node) for node in owner.body
+        copy.deepcopy(node)
+        for node in class_body_defs_for_file(
+            ROOT, "page_api_users_groups.py", "PrivateCompanionPageApiUsersGroupsMixin"
+        )
         if isinstance(node, ast.AsyncFunctionDef) and node.name == "archive_unified_person"
     )
     method.decorator_list = []
@@ -98,14 +98,14 @@ PAGE_ARCHIVE, PAGE_REQUEST = _load_page_archive()
 
 
 def _load_page_delete():
+    # page_api_users_groups.py 拆分后方法落在 page_api_users_groups_part*.py，
+    # 按宿主文件名聚合类体（module_source_index），断言语义不变。
     path = ROOT / "page_api_users_groups.py"
-    tree = ast.parse(path.read_text(encoding="utf-8"))
-    owner = next(
-        node for node in tree.body
-        if isinstance(node, ast.ClassDef) and node.name == "PrivateCompanionPageApiUsersGroupsMixin"
-    )
     method = next(
-        copy.deepcopy(node) for node in owner.body
+        copy.deepcopy(node)
+        for node in class_body_defs_for_file(
+            ROOT, "page_api_users_groups.py", "PrivateCompanionPageApiUsersGroupsMixin"
+        )
         if isinstance(node, ast.AsyncFunctionDef) and node.name == "delete_unified_person"
     )
     method.decorator_list = []
@@ -125,13 +125,11 @@ PAGE_DELETE, DELETE_REQUEST = _load_page_delete()
 
 def _load_page_lifecycle_sanitizer():
     path = ROOT / "page_api_users_groups.py"
-    tree = ast.parse(path.read_text(encoding="utf-8"))
-    owner = next(
-        node for node in tree.body
-        if isinstance(node, ast.ClassDef) and node.name == "PrivateCompanionPageApiUsersGroupsMixin"
-    )
     method = next(
-        copy.deepcopy(node) for node in owner.body
+        copy.deepcopy(node)
+        for node in class_body_defs_for_file(
+            ROOT, "page_api_users_groups.py", "PrivateCompanionPageApiUsersGroupsMixin"
+        )
         if isinstance(node, ast.FunctionDef) and node.name == "_safe_person_lifecycle_result"
     )
     method.decorator_list = []

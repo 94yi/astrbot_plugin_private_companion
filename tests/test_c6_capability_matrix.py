@@ -232,7 +232,16 @@ class C6CapabilityMatrixTests(unittest.TestCase):
         schema = json.loads((ROOT / "_conf_schema.json").read_text(encoding="utf-8"))
         self.assertIsInstance(schema, dict)
         schema_keys = set(schema)
-        source = _source("main.py", "page_api.py", "plugin_bootstrap.py")
+        # 拆分后 page_api / plugin_bootstrap 的配置投影与 bilibili 触发路由
+        # 已下沉到各自的 part 模块，这里按新模块位置登记同一组开关。
+        source = _source(
+            "main.py",
+            "page_api.py",
+            "plugin_bootstrap.py",
+            "page_api_config_part02.py",
+            "plugin_bootstrap_part04.py",
+            "news_exploration_bilibili_trigger_news.py",
+        )
         for task, config_key in OPTIONAL_TASKS.items():
             self.assertIn(config_key, schema_keys, f"optional C6 task {task} lost schema key {config_key}")
             self.assertRegex(source, rf"\b{re.escape(config_key)}\b", f"optional C6 task {task} is not routed")
@@ -273,6 +282,7 @@ class C6CapabilityMatrixTests(unittest.TestCase):
             "group_member_safety.py",
             "group_wakeup.py",
             "atrelay.py",
+            "main_atrelay_relay.py",
             "tts_enhancement.py",
         ) + "\n".join(_page_api_family_sources())
         markers = {

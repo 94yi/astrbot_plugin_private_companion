@@ -12,7 +12,7 @@ import uuid
 
 from identity_namespace import NamespaceContext
 from migration_scoped_projection import scoped_group_ref, scoped_persona_ref
-from tests.module_source_index import class_body_defs
+from tests.module_source_index import class_body_defs, class_body_defs_for_file
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -79,14 +79,14 @@ class _Request:
 
 
 def _load_page_delete_group():
+    # page_api_users_groups.py 拆分后 delete_group 落在 page_api_users_groups_part*.py，
+    # 按宿主文件名聚合类体（module_source_index），断言语义不变。
     path = ROOT / "page_api_users_groups.py"
-    tree = ast.parse(path.read_text(encoding="utf-8"))
-    owner = next(
-        node for node in tree.body
-        if isinstance(node, ast.ClassDef) and node.name == "PrivateCompanionPageApiUsersGroupsMixin"
-    )
     method = next(
-        copy.deepcopy(node) for node in owner.body
+        copy.deepcopy(node)
+        for node in class_body_defs_for_file(
+            ROOT, "page_api_users_groups.py", "PrivateCompanionPageApiUsersGroupsMixin"
+        )
         if isinstance(node, ast.AsyncFunctionDef) and node.name == "delete_group"
     )
     method.decorator_list = []

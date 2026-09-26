@@ -214,8 +214,9 @@ class EmotionE4AfterglowConditionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([-8, -4, -2], values)
 
     def test_afterglow_is_only_requested_from_the_private_message_path(self) -> None:
-        private_pipeline = (ROOT / "message_pipeline.py").read_text(encoding="utf-8")
-        proactive = (ROOT / "proactive_message.py").read_text(encoding="utf-8")
+        from module_source_index import file_family_source_text
+        private_pipeline = file_family_source_text(ROOT, "message_pipeline.py")
+        proactive = file_family_source_text(ROOT, "proactive_message.py")
         self.assertIn("await self._memory_companion_apply_emotional_drift(", private_pipeline)
         self.assertIn("user=fast_user", private_pipeline)
         self.assertNotIn("_memory_companion_apply_emotional_drift", proactive)

@@ -6,7 +6,7 @@ import json
 import re
 from pathlib import Path
 
-from tests.module_source_index import find_methods, page_api_source_text
+from tests.module_source_index import find_methods, file_family_source_text, page_api_source_text
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -108,7 +108,8 @@ def test_q4_legacy_history_is_projected_without_sensitive_fields() -> None:
 
 def test_q4_page_api_and_operations_contract_use_the_same_envelope() -> None:
     page_api = page_api_source_text(ROOT)
-    integration_status = (ROOT / "integration_status.py").read_text(encoding="utf-8")
+    # 拆分后方法可能挪到 integration_status_part*.py，聚合整族查找
+    integration_status = file_family_source_text(ROOT, "integration_status.py")
     app_js = (ROOT / "pages" / "陪伴面板" / "app.js").read_text(encoding="utf-8")
     provider_panel = (ROOT / "pages" / "陪伴面板" / "js" / "panels" / "provider-tree.js").read_text(encoding="utf-8")
     # 方法可能被拆到 page_api_*.py 的域 mixin 里，按宿主类全族定位。

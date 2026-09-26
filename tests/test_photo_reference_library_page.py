@@ -143,7 +143,7 @@ class PhotoReferenceLibraryPageApiTests(unittest.IsolatedAsyncioTestCase):
             }
 
             with patch(
-                "astrbot_plugin_private_companion.page_api_media_reference.PHOTO_REFERENCE_METADATA_REVIEW_TIMEOUT_SECONDS",
+                "astrbot_plugin_private_companion.page_api_media_reference_part01.PHOTO_REFERENCE_METADATA_REVIEW_TIMEOUT_SECONDS",
                 0.01,
             ):
                 async with self.app.test_request_context("/", method="POST", json=payload):
@@ -197,7 +197,7 @@ class PhotoReferenceLibraryPageApiTests(unittest.IsolatedAsyncioTestCase):
             }
 
             with patch(
-                "astrbot_plugin_private_companion.page_api_media_reference.PHOTO_REFERENCE_METADATA_REVIEW_TIMEOUT_SECONDS",
+                "astrbot_plugin_private_companion.page_api_media_reference_part01.PHOTO_REFERENCE_METADATA_REVIEW_TIMEOUT_SECONDS",
                 0.01,
             ):
                 async with self.app.test_request_context("/", method="POST", json=payload):
@@ -498,7 +498,7 @@ class PhotoReferenceLibraryPageApiTests(unittest.IsolatedAsyncioTestCase):
             raw = VALID_PNG
             data_url = f"data:image/png;base64,{base64.b64encode(raw).decode('ascii')}"
 
-            with patch("astrbot_plugin_private_companion.page_api_media_reference.PHOTO_REFERENCE_ASSET_MAX_BYTES", len(raw) - 1):
+            with patch("astrbot_plugin_private_companion.page_api_media_reference_part04.PHOTO_REFERENCE_ASSET_MAX_BYTES", len(raw) - 1):
                 async with self.app.test_request_context("/", method="POST", json={"data_url": data_url}):
                     result = await api.upload_photo_reference()
 
@@ -527,7 +527,7 @@ class PhotoReferenceLibraryPageApiTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(first["data"]["source"], duplicate["data"]["source"])
             self.assertEqual(len(list((root / "photo_reference_images").glob("webui_*"))), 1)
 
-            with patch("astrbot_plugin_private_companion.page_api_media_reference.PHOTO_REFERENCE_UPLOAD_MAX_COUNT", 1):
+            with patch("astrbot_plugin_private_companion.page_api_media_reference_part01.PHOTO_REFERENCE_UPLOAD_MAX_COUNT", 1):
                 rejected = await upload(SECOND_VALID_PNG, "second.png")
             self.assertFalse(rejected["success"])
             self.assertIn("文件上限", rejected["error"])
@@ -544,7 +544,7 @@ class PhotoReferenceLibraryPageApiTests(unittest.IsolatedAsyncioTestCase):
                     return await api.upload_photo_reference()
 
             with patch(
-                "astrbot_plugin_private_companion.page_api_media_reference.PHOTO_REFERENCE_UPLOAD_MAX_TOTAL_BYTES",
+                "astrbot_plugin_private_companion.page_api_media_reference_part01.PHOTO_REFERENCE_UPLOAD_MAX_TOTAL_BYTES",
                 len(VALID_PNG) + len(SECOND_VALID_PNG) - 1,
             ):
                 first = await upload(VALID_PNG)
@@ -664,7 +664,7 @@ class PhotoReferenceLibraryPageApiTests(unittest.IsolatedAsyncioTestCase):
             api = PrivateCompanionPageApi(plugin)
             item_id = api._photo_reference_page_id("library", str(configured))
 
-            with patch("astrbot_plugin_private_companion.page_api_media_reference.PHOTO_REFERENCE_PREVIEW_MAX_BYTES", 4):
+            with patch("astrbot_plugin_private_companion.page_api_media_reference_part02.PHOTO_REFERENCE_PREVIEW_MAX_BYTES", 4):
                 async with self.app.test_request_context(f"/?id={item_id}"):
                     result = await api.get_photo_reference_image_data()
 

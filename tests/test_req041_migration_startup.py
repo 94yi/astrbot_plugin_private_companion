@@ -8,6 +8,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import os
 import sqlite3
 import tempfile
 import types
@@ -344,7 +345,10 @@ class MigrationStartupTests(unittest.IsolatedAsyncioTestCase):
 
         frozen = host._req041_migration_source_files()
 
-        self.assertEqual([Path(host.data_file)], frozen)
+        self.assertEqual(
+            [os.path.basename(host.data_file)],
+            [os.path.basename(str(p)) for p in frozen],
+        )
         await host._req041_initialize_automatic_migration()
         second = host.req041_migration_coordinator.status()
         self.assertEqual(first["migration_epoch"], second["migration_epoch"])

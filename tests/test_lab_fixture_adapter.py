@@ -22,6 +22,7 @@ from astrbot_plugin_private_companion.lab_fixture_adapter import (
 from astrbot_plugin_private_companion.conversation_prompt_section import prompt_section
 from astrbot_plugin_private_companion.plugin_identity import PLUGIN_ID
 from astrbot_plugin_private_companion.relationship_policy import relationship_stage_for_score
+from tests.module_source_index import class_body_defs_for_file
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -44,15 +45,11 @@ def _load_current_lab_fixture_contract():
 
 
 def _group_wakeup_method(name: str):
-    tree = ast.parse((ROOT / "group_wakeup.py").read_text(encoding="utf-8"))
-    mixin = next(
-        node
-        for node in tree.body
-        if isinstance(node, ast.ClassDef) and node.name == "GroupWakeupMixin"
-    )
+    # group_wakeup.py 拆分后方法落在 group_wakeup_part*.py，
+    # 按宿主文件名聚合类体（module_source_index），断言语义不变。
     method = next(
         node
-        for node in mixin.body
+        for node in class_body_defs_for_file(ROOT, "group_wakeup.py", "GroupWakeupMixin")
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == name
     )
     namespace = {

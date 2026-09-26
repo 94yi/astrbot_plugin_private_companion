@@ -287,7 +287,15 @@ class Req028ExpressionContractTests(unittest.TestCase):
         source = (ROOT / "proactive.py").read_text(encoding="utf-8")
         tree = ast.parse(source)
         owner = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "ProactiveMixin")
-        method = next(node for node in owner.body if isinstance(node, ast.FunctionDef) and node.name == "_current_relationship_gate_mode")
+        # 拆分后 _current_relationship_gate_mode 落在 proactive_core_part05.py 的 ProactivePart05Mixin 中，
+        # 需从聚合类体中查找。
+        from tests.module_source_index import class_body_defs_for_file
+        proactive_body = class_body_defs_for_file(ROOT, "proactive.py", "ProactiveMixin")
+        method = next(
+            node
+            for node in proactive_body
+            if isinstance(node, ast.FunctionDef) and node.name == "_current_relationship_gate_mode"
+        )
         constants = {node.value for node in ast.walk(method) if isinstance(node, ast.Constant) and isinstance(node.value, str)}
         self.assertNotIn("enable_relationship_state_machine", constants)
         module = ast.Module(
@@ -375,7 +383,9 @@ class Req028ExpressionContractTests(unittest.TestCase):
 
     def test_page_dto_marks_legacy_relationship_state_read_only(self) -> None:
         page_source = "".join((ROOT / p).read_text(encoding="utf-8") for p in ["page_api.py", *sorted(ROOT.glob("page_api_*.py"))])
-        users_source = (ROOT / "page_api_users_groups.py").read_text(encoding="utf-8")
+        # 拆分后该赋值落在 page_api_users_groups_part01.py，需聚合 users_groups 家族。
+        from tests.module_source_index import file_family_source_text
+        users_source = file_family_source_text(ROOT, "page_api_users_groups.py")
 
         self.assertIn('"current_interaction": interaction', page_source)
         self.assertIn('"expression_decision": expression', page_source)

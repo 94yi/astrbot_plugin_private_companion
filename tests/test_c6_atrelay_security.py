@@ -94,7 +94,11 @@ class AtRelaySecurityTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.helpers = _load_security_helpers()
-        cls.source = (ROOT / "atrelay.py").read_text(encoding="utf-8") + llm_tool_actions_source_text(ROOT)
+        cls.source = (
+            (ROOT / "atrelay.py").read_text(encoding="utf-8")
+            + (ROOT / "atrelay_part03.py").read_text(encoding="utf-8")
+            + llm_tool_actions_source_text(ROOT)
+        )
 
     def _bind(self, harness, name):
         method = self.helpers[name]

@@ -134,12 +134,51 @@ def _resolve_top_level_class(path: Path, name: str) -> tuple[Path, ast.ClassDef]
     return implementation, _top_level_class(implementation, name)
 
 
-def _methods(owner: ast.ClassDef) -> dict[str, ast.FunctionDef | ast.AsyncFunctionDef]:
-    return {
+_CLASS_INDEX: dict[str, tuple[Path, ast.ClassDef]] | None = None
+
+
+def _class_index() -> dict[str, tuple[Path, ast.ClassDef]]:
+    """全仓顶层类名索引（沿用 _source_files 的排除集）。
+
+    拆分后聚合类（如 ``ContentCompanionBridgeMixin``）的类体只剩 bases，
+    方法体搬进了 ``<stem>_partNN.py`` 的域 mixin；按 bases 名回溯即可覆盖整族。
+    """
+    global _CLASS_INDEX
+    if _CLASS_INDEX is None:
+        index: dict[str, tuple[Path, ast.ClassDef]] = {}
+        for path in _source_files():
+            for node in _tree(path).body:
+                if isinstance(node, ast.ClassDef):
+                    index.setdefault(node.name, (path, node))
+        _CLASS_INDEX = index
+    return _CLASS_INDEX
+
+
+def _methods(
+    owner: ast.ClassDef,
+    _seen: set[str] | None = None,
+) -> dict[str, ast.FunctionDef | ast.AsyncFunctionDef]:
+    """类体方法 ∪ 声明基类（同仓可解析者）的方法，递归展开。
+
+    只读 ``owner.body`` 在拆分后会漏掉搬进域 mixin 的方法，导致重叠集合被低估
+    （ContentCompanionBridgeMixin × CreativeMixin 直接变成空集）。按 ``bases``
+    名回溯整族后断言语义不变。
+    """
+    seen = set() if _seen is None else _seen
+    result: dict[str, ast.FunctionDef | ast.AsyncFunctionDef] = {
         node.name: node
         for node in owner.body
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
     }
+    index = _class_index()
+    for base in owner.bases:
+        base_name = ast.unparse(base)
+        if base_name in seen or base_name not in index:
+            continue
+        seen.add(base_name)
+        for name, node in _methods(index[base_name][1], seen).items():
+            result.setdefault(name, node)
+    return result
 
 
 def _property_accessor_kind(

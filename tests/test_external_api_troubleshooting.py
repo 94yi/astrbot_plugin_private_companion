@@ -501,8 +501,9 @@ class ExternalApiTroubleshootingUiTests(unittest.TestCase):
         self.assertIn("external-api-result-preview", self.script)
 
     def test_active_search_and_group_slang_share_the_same_runtime_entry(self) -> None:
-        news = (ROOT / "news_exploration.py").read_text(encoding="utf-8")
-        group = (ROOT / "group_observation.py").read_text(encoding="utf-8")
+        from module_source_index import file_family_source_text
+        news = file_family_source_text(ROOT, "news_exploration.py")
+        group = file_family_source_text(ROOT, "group_observation.py")
         self.assertIn("async def _run_astrbot_web_search", news)
         self.assertIn('getattr(self, "_run_astrbot_web_search", None)', group)
         self.assertIn("results = await searcher(", group)

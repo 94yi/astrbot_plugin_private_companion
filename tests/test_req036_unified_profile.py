@@ -17,6 +17,13 @@ from unittest.mock import AsyncMock
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+from tests.module_source_index import (  # noqa: E402
+    class_body_defs_for_file,
+    find_module_function,
+    host_source_text,
+)
+
 PACKAGE = "req036_companion"
 if PACKAGE not in sys.modules:
     module = types.ModuleType(PACKAGE)
@@ -173,9 +180,10 @@ REQ036_IS_DIRECTED = _load_sync_method("_req036_group_portrait_query_is_directed
 
 
 def _load_async_function(path: Path, name: str) -> Any:
-    source = path.read_text(encoding="utf-8")
-    tree = ast.parse(source)
-    function = next(node for node in tree.body if isinstance(node, ast.AsyncFunctionDef) and node.name == name)
+    # message_pipeline.py 拆分后 handle_private_message 落在 message_pipeline_part*.py，
+    # 按宿主族聚合定位模块级函数（module_source_index），断言语义不变。
+    function = find_module_function(ROOT, path.stem, name)
+    assert function is not None, f"{name} not found in {path.name} family"
     function = copy.deepcopy(function)
     function.decorator_list = []
     module = ast.Module(body=[function], type_ignores=[])
@@ -190,6 +198,27 @@ def _load_async_function(path: Path, name: str) -> Any:
         "_now_ts": lambda: 100.0,
         "_single_line": lambda value, limit=240: " ".join(str(value or "").split())[:limit],
     }
+    # handle_private_message 现已拆成「顺序编排壳 + 9 个阶段函数」（阶段下沉到
+    # message_pipeline_part02_partNN.py）。壳里引用的阶段名与 _StageNext 从真实模块
+    # 取，保证隔离 exec 的语义仍是「函数体逐字来自宿主 AST」。
+    _stage_names = (
+        "_handle_private_message_ingress",
+        "_handle_private_message_quickexit",
+        "_handle_private_message_fastlane",
+        "_handle_private_message_locked_head",
+        "_handle_private_message_lock_buffer",
+        "_handle_private_message_lock_state",
+        "_handle_private_message_lock_memory",
+        "_handle_private_message_lock_commit",
+        "_handle_private_message_tail",
+    )
+    from astrbot_plugin_private_companion import message_pipeline_part02 as _mp2  # noqa: PLC0415
+
+    for _stage_name in _stage_names:
+        _stage = getattr(_mp2, _stage_name, None)
+        if _stage is not None:
+            namespace[_stage_name] = _stage
+    namespace["_StageNext"] = _mp2._StageNext
     exec(compile(module, str(path), "exec"), namespace)
     return namespace[name]
 
@@ -198,10 +227,13 @@ REQ036_PRIVATE_HANDLER = _load_async_function(ROOT / "message_pipeline.py", "han
 
 
 def _load_event_dispatch_method(name: str) -> Any:
-    source = (ROOT / "event_dispatch.py").read_text(encoding="utf-8")
-    tree = ast.parse(source)
-    owner = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "EventDispatchMixin")
-    method = next(node for node in owner.body if isinstance(node, ast.FunctionDef) and node.name == name)
+    # event_dispatch.py 拆分后方法落在 event_dispatch_*.py 的域 mixin 里，
+    # 按宿主族聚合类体（module_source_index），断言语义不变。
+    method = next(
+        node
+        for node in class_body_defs_for_file(ROOT, "event_dispatch.py", "EventDispatchMixin")
+        if isinstance(node, ast.FunctionDef) and node.name == name
+    )
     method = copy.deepcopy(method)
     module = ast.Module(body=[method], type_ignores=[])
     ast.fix_missing_locations(module)
@@ -326,10 +358,13 @@ REQ036_ACTIVE_REGISTRY = _load_sync_plugin_method("_active_unified_person_regist
 
 
 def _load_proactive_target_sync() -> Any:
-    source = (ROOT / "proactive.py").read_text(encoding="utf-8")
-    tree = ast.parse(source)
-    owner = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "ProactiveMixin")
-    method = next(node for node in owner.body if isinstance(node, ast.FunctionDef) and node.name == "_sync_configured_targets")
+    # proactive.py 拆分后方法落在 proactive_core_*.py，按宿主族聚合类体
+    # （module_source_index），断言语义不变。
+    method = next(
+        node
+        for node in class_body_defs_for_file(ROOT, "proactive.py", "ProactiveMixin")
+        if isinstance(node, ast.FunctionDef) and node.name == "_sync_configured_targets"
+    )
     method = copy.deepcopy(method)
     module = ast.Module(body=[method], type_ignores=[])
     ast.fix_missing_locations(module)
@@ -349,14 +384,15 @@ REQ036_CONFIGURED_TARGET_SYNC = _load_proactive_target_sync()
 
 
 def _load_user_list_method() -> Any:
-    source = (ROOT / "page_api_users_groups.py").read_text(encoding="utf-8")
-    tree = ast.parse(source)
-    owner = next(
+    # page_api_users_groups.py 拆分后 list_users 落在 page_api_users_groups_part*.py，
+    # 按宿主文件名聚合类体（module_source_index），断言语义不变。
+    method = next(
         node
-        for node in tree.body
-        if isinstance(node, ast.ClassDef) and node.name == "PrivateCompanionPageApiUsersGroupsMixin"
+        for node in class_body_defs_for_file(
+            ROOT, "page_api_users_groups.py", "PrivateCompanionPageApiUsersGroupsMixin"
+        )
+        if isinstance(node, ast.AsyncFunctionDef) and node.name == "list_users"
     )
-    method = next(node for node in owner.body if isinstance(node, ast.AsyncFunctionDef) and node.name == "list_users")
     module = ast.Module(body=[copy.deepcopy(method)], type_ignores=[])
     ast.fix_missing_locations(module)
     namespace: dict[str, Any] = {
@@ -1731,7 +1767,9 @@ class Req036CompanionTests(unittest.TestCase):
         self.assertTrue(event.private_companion_req036_denied)
 
     def test_private_message_attaches_unified_identity_without_permission(self) -> None:
-        source = (ROOT / "message_pipeline.py").read_text(encoding="utf-8")
+        # message_pipeline.py 拆分后 handle_private_message 落在 message_pipeline_part*.py，
+        # 源码断言改读整族文本，断言语义不变。
+        source = host_source_text(ROOT, "message_pipeline")
         self.assertIn('source="private_auto"', source)
         self.assertNotIn("_req036_reject_unauthorized_private_event", source)
 
@@ -1817,7 +1855,8 @@ class Req036CompanionTests(unittest.TestCase):
         self.assertIn("portrait_request_fields_invalid", validate_portrait_request(extra_field))
 
     def test_private_entry_has_no_capability_rejection(self) -> None:
-        source = (ROOT / "message_pipeline.py").read_text(encoding="utf-8")
+        # 同上：按宿主族拼接源码后切片，方法搬走也不空转。
+        source = host_source_text(ROOT, "message_pipeline")
         start = source.index("async def handle_private_message(")
         end = source.index("async def handle_group_message(", start)
         handler = source[start:end]

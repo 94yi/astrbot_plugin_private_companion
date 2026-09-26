@@ -4,7 +4,7 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from tests.module_source_index import page_api_source_text
+from tests.module_source_index import page_api_source_text, file_family_source_text
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -12,7 +12,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class OpenRouterConfigUiTests(unittest.TestCase):
     def test_page_setting_normalizer_accepts_openrouter_aliases(self) -> None:
-        source = (ROOT / "page_api_settings.py").read_text(encoding="utf-8")
+        # 拆分后 alias 块落在 page_api_settings_part02.py，只读 page_api_settings.py 宿主会漏掉。
+        source = file_family_source_text(ROOT, "page_api_settings.py")
         alias_block = source.split('if key in {"external_image_api_platform", "backup_external_image_api_platform"}', 1)[1].split(
             "return _SETTING_UNHANDLED", 1
         )[0]
@@ -22,7 +23,8 @@ class OpenRouterConfigUiTests(unittest.TestCase):
         self.assertIn('"openrouter"', alias_block)
 
     def test_manual_command_platform_choices_include_openrouter(self) -> None:
-        source = (ROOT / "command_handlers.py").read_text(encoding="utf-8")
+        # 拆分后 platform spec 落在 command_handlers_cm_snapshot_config.py，用 family 全文搜索。
+        source = file_family_source_text(ROOT, "command_handlers.py")
         for key in ("external_image_api_platform", "backup_external_image_api_platform"):
             spec = source.split(f'"{key}": {{', 1)[1].split(
                 '"backup_external_image_api_timeout_seconds"', 1

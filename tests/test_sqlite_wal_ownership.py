@@ -168,7 +168,10 @@ class SqliteWalOwnershipTests(unittest.IsolatedAsyncioTestCase):
             }
             self.assertTrue(all(mode == "delete" for _digest_value, mode in before.values()))
 
-            self.assertEqual(own_paths, set(host._sqlite_wal_candidate_paths()))
+            self.assertEqual(
+                {p.resolve() for p in own_paths},
+                {p.resolve() for p in host._sqlite_wal_candidate_paths()},
+            )
             await host._apply_sqlite_wal_optimizations()
 
             self.assertTrue(all(_journal_mode(path) == "wal" for path in own_paths))

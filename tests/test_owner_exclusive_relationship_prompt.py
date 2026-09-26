@@ -30,7 +30,7 @@ def _single_line(value: Any, limit: int = 80) -> str:
     return " ".join(str(value or "").split())[:limit]
 
 
-def _strip_internal_message_blocks(value: Any) -> str:
+def _strip_internal_message_blocks(value: Any, *, enabled: bool = True) -> str:
     return str(value or "")
 
 

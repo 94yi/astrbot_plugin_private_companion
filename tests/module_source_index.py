@@ -43,6 +43,15 @@ _HOST_SCOPE = {
     "user_memory": ("user_memory.py", "user_memory_*.py"),
     "llm_tool_actions": ("llm_tool_actions.py", "llm_tool_actions_*.py"),
     "private_image": ("private_image.py", "private_image_*.py"),
+    "token_budget": ("token_budget.py", "token_budget_*.py"),
+    "core_store": ("core_store.py", "core_store_*.py"),
+    "group_wakeup": ("group_wakeup.py", "group_wakeup_*.py"),
+    "group_observation": ("group_observation.py", "group_observation_*.py"),
+    "event_dispatch": ("event_dispatch.py", "event_dispatch_*.py"),
+    # 特例：proactive 的域模块前缀是 proactive_core_，而非 proactive_。
+    # 若写成 proactive_*.py 会误吞 proactive_message_*.py / proactive_engine_*.py，
+    # 把另外两个已注册宿主族的模块混进来。
+    "proactive": ("proactive.py", "proactive_core_*.py"),
 }
 
 
@@ -245,6 +254,88 @@ def find_methods(
     if missing:
         raise KeyError(missing)
     return result
+
+
+def sources_for_file(root: Path, filename: str) -> list[Path]:
+    """给定「宿主文件名」，返回其所属宿主族的全部模块（宿主优先）。
+
+    - ``filename`` 命中已注册宿主（如 ``core_store.py``）→ 返回 ``host_sources``。
+    - 未注册（如 ``page_api_settings.py``）→ 退化为「该文件 + 同名前缀的 ``X_*.py``」，
+      这样即使宿主族没有登记进 ``_HOST_SCOPE``，跨域聚合仍然生效。
+    """
+    root = Path(root)
+    path = root / filename
+    stem = Path(filename).stem
+    for host, (first, _pattern) in _HOST_SCOPE.items():
+        if Path(first).stem == stem:
+            return host_sources(root, host)
+    family: list[Path] = []
+    if path.exists():
+        family.append(path)
+    for candidate in sorted(root.glob(f"{stem}_*.py")):
+        if candidate not in family:
+            family.append(candidate)
+    return family
+
+
+def class_body_defs_for_file(root: Path, filename: str, class_name: str) -> list[ast.stmt]:
+    """``class_body_defs`` 的按文件名版本，作为测试里 ``owner.body`` 的直接替代。
+
+    调用点原先是「读单个宿主文件 → 找 ClassDef → 遍历 ``owner.body``」。拆分后
+    方法搬到域模块里，只读宿主会漏掉。本函数按 ``sources_for_file`` 聚合整族，
+    逐字返回同样的语句节点，**断言语义不变**。
+    """
+    defs: list[ast.stmt] = []
+    for path in sources_for_file(root, filename):
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (OSError, SyntaxError):
+            continue
+        for node in tree.body:
+            if isinstance(node, ast.ClassDef) and _accept_class(node.name, class_name):
+                defs.extend(node.body)
+    return defs
+
+
+def file_family_source_text(root: Path, filename: str) -> str:
+    """``sources_for_file`` 对应文件的源码全文拼接（宿主优先，按文件名排序）。
+
+    与 ``host_source_text`` 的区别：后者按**注册宿主**取族，本函数按**具体文件名**
+    取族。凡是「在某个拆分过的模块里找字符串 / 计数 / 切片」的断言，都应改用本函数。
+    """
+    return "\n".join(
+        path.read_text(encoding="utf-8") for path in sources_for_file(root, filename)
+    )
+
+
+def module_level_functions(
+    root: Path,
+    host: str,
+) -> Iterator[tuple[ast.FunctionDef | ast.AsyncFunctionDef, str]]:
+    """逐个产出宿主族里的**模块级**函数定义：(节点, 所在模块文件名)。"""
+    for path, tree in iter_module_sources(root, host):
+        for node in tree.body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                yield node, path.name
+
+
+def find_module_function(
+    root: Path,
+    host: str,
+    name: str,
+) -> ast.FunctionDef | ast.AsyncFunctionDef | None:
+    """在宿主族里定位模块级函数；找不到再兜底扫嵌套定义。"""
+    for node, _src in module_level_functions(root, host):
+        if node.name == name:
+            return node
+    for _path, tree in iter_module_sources(root, host):
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                and node.name == name
+            ):
+                return node
+    return None
 
 
 def class_body_span(node: ast.ClassDef) -> int:

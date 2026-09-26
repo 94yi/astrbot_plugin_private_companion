@@ -13,7 +13,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 
-from tests.module_source_index import page_api_source_text
+from tests.module_source_index import file_family_source_text, page_api_source_text
 
 from astrbot_plugin_private_companion.persona_config import (
     PERSONA_SETTINGS_SCHEMA_VERSION,
@@ -835,7 +835,7 @@ class WardrobeConfigTests(unittest.TestCase):
             self.assertGreaterEqual(source.count(f'"{key}"'), minimum, key)
 
     def test_bootstrap_reads_wardrobe_config(self) -> None:
-        source = (ROOT / "plugin_bootstrap.py").read_text(encoding="utf-8")
+        source = file_family_source_text(ROOT, "plugin_bootstrap.py")
         for attr in (
             "self.enable_wardrobe",
             "self.wardrobe_tendency",
@@ -955,7 +955,7 @@ class WardrobePanelTests(unittest.TestCase):
             encoding="utf-8"
         )
         cls.api = page_api_source_text(ROOT)
-        cls.api_settings = (ROOT / "page_api_settings.py").read_text(encoding="utf-8")
+        cls.api_settings = file_family_source_text(ROOT, "page_api_settings.py")
 
     def test_panel_copies_are_byte_identical(self) -> None:
         for relative in ("app.js", "app.css", "index.html", "js/features/wardrobe.js"):
