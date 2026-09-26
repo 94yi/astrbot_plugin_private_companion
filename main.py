@@ -464,6 +464,7 @@ from .main_persona_profile import PrivateCompanionPluginPersonaProfileMixin
 from .main_segmented_reply import PrivateCompanionPluginSegmentedReplyMixin
 from .main_private_passive_prompt import PrivateCompanionPluginPrivatePassivePromptMixin
 from .main_misc_unassigned import PrivateCompanionPluginMiscUnassignedMixin
+from .main_persona_routing_part04 import PrivateCompanionPluginPersonaRoutingPart04Mixin
 from .main_util_small import PrivateCompanionPluginUtilSmallMixin
 from .main_proactive_only_unlock import PrivateCompanionPluginProactiveOnlyUnlockMixin
 from .main_lifecycle import PrivateCompanionPluginLifecycleMixin
@@ -864,6 +865,7 @@ class PrivateCompanionPlugin(
     PrivateCompanionPluginLlmRequestMixin,
     PrivateCompanionPluginReq036UnifiedPersonMixin,
     PrivateCompanionPluginPersonaProfileMixin,
+    PrivateCompanionPluginPersonaRoutingPart04Mixin,
     PrivateCompanionPluginSegmentedReplyMixin,
     PrivateCompanionPluginPrivatePassivePromptMixin,
     PrivateCompanionPluginMiscUnassignedMixin,
