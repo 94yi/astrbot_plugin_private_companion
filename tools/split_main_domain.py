@@ -706,8 +706,11 @@ def main() -> int:
 
     # ---- 报告头 ----
     print(f"== {'DRY-RUN' if args.dry_run else 'WRITE'} : {args.domain_label or args.new_class} ==")
+    # f-string 表达式内不能出现反斜杠（Python 3.11 限制，PEP 701 才放行），先提取变量。
+    crlf_count = raw.count(b"\r\n")
+    lf_count = raw.count(b"\n") - crlf_count
     print(f"宿主            : {host_path}（{len(raw_lines) - 1} 行, "
-          f"CRLF={raw.count(b'\r\n')}, LF={raw.count(b'\n') - raw.count(b'\r\n')}）")
+          f"CRLF={crlf_count}, LF={lf_count}）")
     print(f"新模块          : {new_module_path}"
           f"{'（已存在，--force 将覆盖）' if new_module_path.exists() else ''}")
     print(f"新类            : {args.new_class}")
