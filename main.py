@@ -1426,4 +1426,3 @@ class PrivateCompanionPlugin(
     async def on_group_message(self, event: AstrMessageEvent, *args, **kwargs):
         await _mark_hdsi_inbound(self, event)
         return await handle_group_message(self, event, *args, **kwargs)
-

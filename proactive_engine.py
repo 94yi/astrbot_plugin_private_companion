@@ -306,4 +306,3 @@ class ProactiveEngineMixin(ProactiveEngineWeatherMixin, ProactiveEngineAbilityMi
     _PROACTIVE_SLEEP_EXEMPT_REASONS = frozenset(
         {"weather_alert", "health_alert", "memo_note_reminder", "environment_change", "timer"}
     )
-

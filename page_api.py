@@ -895,6 +895,3 @@ class PrivateCompanionPageApi(
             "consecutive_failures": self._int(raw.get("consecutive_failures")),
             "last_error": self._single_line(raw.get("last_error"), 180),
         }
-
-
-

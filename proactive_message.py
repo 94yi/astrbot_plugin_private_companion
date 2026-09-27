@@ -403,5 +403,3 @@ _PLATFORM_DISPLAY_NAMES = {
 
 class ProactiveMessageMixin(FinalResponsePersistenceMixin, ProactiveMessageChatBridgeMixin, ProactiveMessageVoiceTtsMixin, ProactiveMessageTextFinalizeMixin, ProactiveMessageGenerationMixin, ProactiveMessageSendReviewMixin, ProactiveMessageExternalShareMixin, ProactiveMessagePromptContextMixin, ProactiveMessageActionExecutionMixin, ProactiveMessageFrameworkPromptMixin, ProactiveMessageOutboundDeliveryMixin, ProactiveMessagePhotoGenerationMixin):
     """主动消息生成、动作执行和发送链路"""
-
-
