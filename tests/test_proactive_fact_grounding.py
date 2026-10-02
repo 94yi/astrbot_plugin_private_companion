@@ -7,6 +7,7 @@ import unittest
 
 from astrbot_plugin_private_companion.proactive_message import ProactiveMessageMixin
 from astrbot_plugin_private_companion.user_memory import UserMemoryMixin
+from astrbot_plugin_private_companion.helpers import _strip_terminal_sentence_period
 
 
 class _FactGroundingHarness(ProactiveMessageMixin):
@@ -130,6 +131,13 @@ class _ReplyEvent:
 class ProactiveFactGroundingTests(unittest.TestCase):
     def setUp(self) -> None:
         self.harness = _FactGroundingHarness()
+
+    def test_terminal_period_is_removed_but_other_endings_are_preserved(self) -> None:
+        self.assertEqual(_strip_terminal_sentence_period("明天提醒你。"), "明天提醒你")
+        self.assertEqual(_strip_terminal_sentence_period('明天提醒你。”'), '明天提醒你”')
+        self.assertEqual(_strip_terminal_sentence_period("明天提醒你."), "明天提醒你")
+        self.assertEqual(_strip_terminal_sentence_period("明天提醒你……"), "明天提醒你……")
+        self.assertEqual(_strip_terminal_sentence_period("明天提醒你？"), "明天提醒你？")
 
     def test_meal_care_removes_unverified_story_but_keeps_soft_question(self) -> None:
         decision = self.harness._unverified_proactive_fact_decision(
