@@ -157,6 +157,7 @@ from .reference_assets import (
 from .reaction_asset_library import get_reaction_asset_library
 from .logging_util import get_module_logger
 from .page_backend import MigrationBackupService, build_route_bindings, generation_log_candidates
+from .context_editor import ContextEditorService
 from .task_prompt_registry import (
     TASK_PROMPT_CONFIG_KEY,
     TASK_PROMPT_GROUPS,
@@ -469,6 +470,7 @@ class PrivateCompanionPageApi(
 
     def __init__(self, plugin: Any) -> None:
         self.plugin = plugin
+        self.context_editor = ContextEditorService(plugin)
         self._schema_key_index_cache: dict[str, Any] | None = None
         self._proactive_task_summary_task: asyncio.Task[dict[str, Any]] | None = None
         self._proactive_task_summary_cache: dict[str, Any] = {}
@@ -1242,6 +1244,7 @@ class PrivateCompanionPageApi(
     def route_bindings(self) -> list[tuple[str, Any, list[str], str]]:
         """Return the wrapped page handlers used by every transport."""
         routes = [
+            *self.context_editor.route_bindings(),
             ("/overview", self.get_overview, ["GET"], "Private Companion Page overview"),
             ("/calendar", self.get_calendar, ["GET"], "Private Companion Page long-lived calendar"),
             ("/calendar/conflicts", self.get_calendar_conflicts, ["GET"], "Private Companion Page calendar conflicts"),
