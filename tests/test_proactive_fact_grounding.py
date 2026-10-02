@@ -210,6 +210,21 @@ class ProactiveFactGroundingTests(unittest.TestCase):
         self.assertEqual(decision["decision"], "drop")
         self.assertTrue(decision["hard"])
 
+    def test_future_reminder_promise_without_current_execution_is_dropped(self) -> None:
+        decision = self.harness._local_proactive_send_decision(
+            {"nickname": "宜"},
+            "宜，明天起早上告诉你当天的课，课前十五分钟也提醒你。",
+            reason="open_loop_followup",
+            action="message",
+            motive="延续课程提醒约定",
+            topic="课程提醒",
+            action_context="文字",
+        )
+
+        self.assertEqual(decision["decision"], "drop")
+        self.assertTrue(decision["hard"])
+        self.assertIn("执行凭证", decision["reason"])
+
     def test_bilibili_claim_with_reddit_link_is_dropped_even_without_review(self) -> None:
         decision = self.harness._local_proactive_send_decision(
             {},
