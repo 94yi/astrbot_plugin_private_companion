@@ -19631,6 +19631,7 @@ class PrivateCompanionPageApi(
                 async with self.plugin._data_lock:
                     results: list[dict[str, Any]] = []
                     seen: set[tuple[str, str, str]] = set()
+                    validation_profiles: dict[tuple[str, str], dict[str, Any]] = {}
                     changed = False
                     save_sections: set[str] = set()
                     for raw_item in raw_items:
@@ -19663,7 +19664,13 @@ class PrivateCompanionPageApi(
                                 target_type, target_id, item,
                             )
                             if managed:
-                                prepared = self._expression_prepare_admin_profile(item, scope_context)
+                                validation_key = (target_type, target_id)
+                                prepared = validation_profiles.get(validation_key)
+                                if prepared is None:
+                                    prepared = deepcopy(
+                                        self._expression_prepare_admin_profile(item, scope_context)
+                                    )
+                                    validation_profiles[validation_key] = prepared
                                 self._expression_validate_admin_revision(prepared, raw_item)
                             before = deepcopy(item.get("expression_profile") or {})
                             result_message = self._apply_expression_profile_action(
