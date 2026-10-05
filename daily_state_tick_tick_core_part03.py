@@ -5,6 +5,7 @@
 方法体零改动：所有 self.xxx 依赖通过继承链解析（宿主类 DailyStateTickMixin）。
 """
 from __future__ import annotations
+from .helpers import _strip_terminal_sentence_period
 
 from .helpers import (
     _safe_int,
@@ -174,6 +175,7 @@ class DailyStateTickTickCorePart03Mixin:
                     _single_line(cleaned_text, 120),
                 )
                 text = cleaned_text
+        text = _strip_terminal_sentence_period(text)
         if not is_troubleshooting_for_send and reason == "activity_share":
             async with self._data_lock:
                 current_for_dedupe = self._get_user(user_id)
@@ -262,6 +264,7 @@ class DailyStateTickTickCorePart03Mixin:
                 self._save_data_sync(
                     sections={
                         "users",
+                        "daily_state",
                         "proactive_candidate_pool",
                         "proactive_audit_log",
                         "troubleshooting_test_results",

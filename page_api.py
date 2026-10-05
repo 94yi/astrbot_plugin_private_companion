@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
+from .context_editor import ContextEditorService
 
 import asyncio
 import functools
@@ -386,6 +387,7 @@ class PrivateCompanionPageApi(
 
     def __init__(self, plugin: Any) -> None:
         self.plugin = plugin
+        self.context_editor = ContextEditorService(plugin)
         self._schema_key_index_cache: dict[str, Any] | None = None
         self._proactive_task_summary_task: asyncio.Task[dict[str, Any]] | None = None
         self._proactive_task_summary_cache: dict[str, Any] = {}

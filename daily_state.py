@@ -701,3 +701,37 @@ class DailyStateMixin(DailyStateTickMixin, DailyStateWeatherMixin, DailyStateTim
             runtime = self.data.setdefault("proactive_runtime", {})
             if isinstance(runtime, dict):
                 runtime["last_tick_finished_at"] = _now_ts()
+
+    def _record_proactive_platform_send_circuit(self, error_text: str, *, now: float) -> float:
+        compact_error = re.sub(r"\s+", "", str(error_text or "").lower())
+        if "retcode=1200" not in compact_error or "eventchecker" not in compact_error:
+            return 0.0
+        daily_state = self.data.setdefault("daily_state", {})
+        if not isinstance(daily_state, dict):
+            daily_state = {}
+            self.data["daily_state"] = daily_state
+        circuit = daily_state.get("proactive_platform_send_circuit")
+        window_started_at = _safe_float(circuit.get("window_started_at"), 0) if isinstance(circuit, dict) else 0
+        if not window_started_at or float(now) - window_started_at > 10 * 60:
+            failures = 1
+            window_started_at = float(now)
+        else:
+            failures = _safe_int(circuit.get("failures"), 0, 0, 1000) + 1
+        open_until = _safe_float(circuit.get("open_until"), 0) if isinstance(circuit, dict) else 0
+        if failures >= 2:
+            open_until = max(open_until, float(now) + 2 * 3600)
+        daily_state["proactive_platform_send_circuit"] = {
+            "kind": "onebot_event_checker_rejection",
+            "failures": failures,
+            "window_started_at": window_started_at,
+            "updated_at": float(now),
+            "open_until": open_until,
+        }
+        return open_until
+
+    def _proactive_platform_send_circuit_remaining(self, *, now: float) -> float:
+        data = getattr(self, "data", {})
+        daily_state = data.get("daily_state") if isinstance(data, dict) else None
+        circuit = daily_state.get("proactive_platform_send_circuit") if isinstance(daily_state, dict) else None
+        open_until = _safe_float(circuit.get("open_until"), 0) if isinstance(circuit, dict) else 0
+        return max(0.0, open_until - float(now))

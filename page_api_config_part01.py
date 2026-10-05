@@ -25,6 +25,7 @@ class PrivateCompanionPageApiConfigPart01Mixin:
     def route_bindings(self) -> list[tuple[str, Any, list[str], str]]:
         """Return the wrapped page handlers used by every transport."""
         routes = [
+            *self.context_editor.route_bindings(),
             ("/overview", self.get_overview, ["GET"], "Private Companion Page overview"),
             ("/calendar", self.get_calendar, ["GET"], "Private Companion Page long-lived calendar"),
             ("/calendar/conflicts", self.get_calendar_conflicts, ["GET"], "Private Companion Page calendar conflicts"),

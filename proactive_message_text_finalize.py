@@ -5,6 +5,7 @@
 方法体零改动：所有 self.xxx 依赖通过继承链解析（宿主类 ProactiveMessageMixin）。
 """
 from __future__ import annotations
+from .helpers import _strip_terminal_sentence_period
 
 import random
 import re
@@ -151,7 +152,9 @@ class ProactiveMessageTextFinalizeMixin:
             lines.append(line)
         if not lines:
             return ""
-        return self._truncate_proactive_text("\n".join(lines[:3]), 260)
+        return _strip_terminal_sentence_period(
+            self._truncate_proactive_text("\n".join(lines[:3]), 260)
+        )
 
     def _strip_parenthetical_stage_directions(self, text: str) -> str:
         cleaned = str(text or "").strip()

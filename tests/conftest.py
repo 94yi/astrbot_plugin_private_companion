@@ -121,6 +121,11 @@ if "astrbot" not in sys.modules:
     api_event.MessageEventResult = _Dummy
     api_event.filter = _Dummy()
     api.event = api_event
+    web = _module("astrbot.api.web")
+    web.error_response = _Dummy()
+    web.json_response = _Dummy()
+    web.request = _Dummy()
+    api.web = web
 
     message_components = _module("astrbot.api.message_components")
     for _name in (
@@ -157,6 +162,11 @@ if "astrbot" not in sys.modules:
 
     agent = _module("astrbot.core.agent", package=True)
     agent_message = _module("astrbot.core.agent.message")
+    class _Message:
+        @classmethod
+        def model_validate(cls, _value):
+            return cls()
+    agent_message.Message = _Message
     for _name in (
         "AssistantMessageSegment",
         "Message",
@@ -165,6 +175,7 @@ if "astrbot" not in sys.modules:
         "UserMessageSegment",
     ):
         setattr(agent_message, _name, _Dummy)
+    agent_message.Message = _Message
     agent.message = agent_message
     agent_tool = _module("astrbot.core.agent.tool")
     agent_tool.FunctionTool = _Dummy
@@ -264,6 +275,7 @@ if "astrbot" not in sys.modules:
     utils = _module("astrbot.core.utils", package=True)
     paths = _module("astrbot.core.utils.astrbot_path")
     paths.get_astrbot_data_path = lambda: Path(".")
+    paths.get_astrbot_plugin_data_path = lambda: Path(".")
     utils.astrbot_path = paths
     core.utils = utils
 

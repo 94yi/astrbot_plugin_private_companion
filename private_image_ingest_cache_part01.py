@@ -253,6 +253,8 @@ class PrivateImageIngestCachePart01Mixin:
         text = str(source or "").strip().strip('"')
         if not text:
             return None
+        if text.lower().startswith(("base64://", "data:", "http://", "https://")):
+            return None
         if text.lower().startswith("file:"):
             try:
                 parsed = urlsplit(text)
@@ -493,6 +495,10 @@ class PrivateImageIngestCachePart01Mixin:
         prepared: list[str] = []
         now_ms = int(_private_image_host._now_ts() * 1000)
         for index, source in enumerate([str(item).strip() for item in (image_sources or []) if str(item or "").strip()][:12], 1):
+            if source.startswith(("base64://", "data:")):
+                if self._private_image_source_to_model_url(source) and source not in prepared:
+                    prepared.append(source)
+                continue
             if re.match(r"^https?://", source, flags=re.I):
                 persisted = await self._persist_private_remote_image_source(
                     source,

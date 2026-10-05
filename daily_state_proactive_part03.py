@@ -50,6 +50,7 @@ class DailyStateProactivePart03Mixin:
         retry_profile = _single_line(user.get("planned_proactive_route_retry_profile"), 32) or "normal"
         retry_limit = 4 if retry_profile == "until_expiry" else 2
         clean_error = _single_line(error_text, 180)
+        platform_circuit_open_until = self._record_proactive_platform_send_circuit(clean_error, now=current)
         error_hint = ""
         if clean_error:
             compact_error = clean_error.lower()
@@ -149,6 +150,8 @@ class DailyStateProactivePart03Mixin:
             retry_delay_seconds = 5 * 60 if retry_count <= 1 else 12 * 60
         else:
             retry_delay_seconds = 8 * 60 if retry_count <= 1 else 20 * 60
+        if platform_circuit_open_until > current:
+            retry_delay_seconds = max(retry_delay_seconds, platform_circuit_open_until - current)
         planned_expire_at = _safe_float(delivery_snapshot.get("expire_at"), 0) if isinstance(delivery_snapshot, dict) else 0
         fresh_until_at = min(current + 72 * 3600, planned_expire_at) if planned_expire_at > current else current
         if fresh_until_at <= current + retry_delay_seconds:

@@ -74,7 +74,10 @@ class PrivateImageIngestCachePart02Mixin:
             path = self._private_image_local_path_from_source(text)
             if path is None:
                 continue
-            if not path.exists() or not path.is_file() or not self._private_image_local_path_is_allowed(path):
+            try:
+                if not path.exists() or not path.is_file() or not self._private_image_local_path_is_allowed(path):
+                    continue
+            except OSError:
                 continue
             ref = str(path.resolve())
             if ref not in refs:
@@ -92,7 +95,10 @@ class PrivateImageIngestCachePart02Mixin:
         path = self._private_image_local_path_from_source(text)
         if path is None:
             return ""
-        if not path.exists() or not path.is_file():
+        try:
+            if not path.exists() or not path.is_file():
+                return ""
+        except OSError:
             return ""
         if not self._private_image_local_path_is_allowed(path):
             return ""

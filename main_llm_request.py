@@ -5,6 +5,7 @@
 方法体零改动：所有 self.xxx 依赖通过继承链解析（宿主类 PrivateCompanionPlugin）。
 """
 from __future__ import annotations
+from .helpers import _strip_terminal_sentence_period
 from typing import Any
 
 from .conversation_injection_plan import PLACEMENT_DYNAMIC_SYSTEM, get_conversation_injection_plan
@@ -501,6 +502,11 @@ class PrivateCompanionPluginLlmRequestMixin:
                     stats["rewritten"] = _safe_int(stats.get("rewritten"), 0, 0) + 1
                     stats["last_rewritten_at"] = self._environment_now().strftime("%Y-%m-%d %H:%M")
                     self._save_data_sync(sections={"users"})
+
+            period_stripped_text = _strip_terminal_sentence_period(working_text)
+            if period_stripped_text != working_text:
+                working_text = period_stripped_text
+                resp.completion_text = working_text
 
             async with self._data_lock:
                 live_user_for_duplicate = self._get_user(user_id)
