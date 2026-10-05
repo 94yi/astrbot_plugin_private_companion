@@ -58,6 +58,13 @@ jobs:
           python scripts/ci_static_checks.py
           --package astrbot_plugin_private_companion
           --import-module story_migration_contract
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test persona reset confirmation in the panel
+        run: |
+          python -m unittest discover -s tests -p 'test_persona_reset_ui.py' -v
+          python -m unittest discover -s tests -p 'test_multi_persona_config_ui.py' -v
       - name: Check patch whitespace
         shell: bash
         run: |
